@@ -8,13 +8,16 @@ from math import sqrt
 import streaming_subclass as stsb
 
 
-def plot_hpca_ada(adaoja, hpca, data_name, true_evar=None):
+def plot_hpca_ada(adaoja, hpca, data_name, fig_name=None, true_evar=None):
     '''
     Plots and saves the explained variance for AdaOja vs HPCA for a given dataset.
     Input:
         adaoja: an AdaOja class object (see streaming_subclass.py for details)
         hpca: an HPCA class object (see streaming_subclass.py for details)
         data_name: str, name for the data being applied
+        fig_name: None or optional string, the name of the figure to be saved.
+            if fig_name = None, default fig_name is 'hpcavada_' + data_name +
+            '_k' + str(k) + '.png'.
         true_evar: None or optional positive float between 0 and 1. The
             explained variance for the top k true eigenvectors of the covariance
             matrix (typically the sample covariance matrix). This allows us to
@@ -30,10 +33,13 @@ def plot_hpca_ada(adaoja, hpca, data_name, true_evar=None):
 
 
     plt.legend(loc='best')
-    plt.title('HPCA vs AdaOja\n' + data_name + ' data set, k=' + str(k))
+    plt.title('HPCA vs AdaOja\n' + data_name + ', k=' + str(k))
     plt.xlabel('Number of samples')
     plt.ylabel('Explained Variance')
-    plt.savefig('hpcavada_' + data_name + '_k' + str(k) + '.png')
+    if fig_name is None:
+        plt.savefig('hpcavada_' + data_name + '_k' + str(k) + '.png')
+    else:
+        plt.savefig(fig_name)
     plt.show()
 
 class compare_lr(object):
