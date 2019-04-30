@@ -10,23 +10,23 @@ import streaming_subclass as stsb
 
 def plot_hpca_ada(adaoja, hpca, data_name, true_evar=None):
     '''
-    Plots the explained variance for AdaOja vs HPCA for a given dataset.
+    Plots and saves the explained variance for AdaOja vs HPCA for a given dataset.
     Input:
         adaoja: an AdaOja class object (see streaming_subclass.py for details)
         hpca: an HPCA class object (see streaming_subclass.py for details)
         data_name: str, name for the data being applied
-        true_evar: None or optional positive float between 0 and 1.
-            The explained variance for the top k true eigenvectors of the covariance
-            matrix (typically the sample covariance matrix).
-            This allows us to compare our methods to the best case, offline result.
+        true_evar: None or optional positive float between 0 and 1. The
+            explained variance for the top k true eigenvectors of the covariance
+            matrix (typically the sample covariance matrix). This allows us to
+            compare our methods to the "best case", offline result.
     '''
     k = adaoja.k
-    plt.plot(adaoja.acc_indices, adaoja.accQ, '--', color='black', label='AdaOja')
-    plt.plot(hpca.acc_indices, hpca.accQ, label='HPCA')
+    plt.plot(adaoja.acc_indices, adaoja.accQ, '--', color='green', label='AdaOja')
+    plt.plot(hpca.acc_indices, hpca.accQ, '-.', color='black', label='HPCA')
 
     if true_evar is not None:
         assert true_evar >= 0 and true_evar <=1, "The true explained variance should be a float > 0"
-        plt.plot(adaoja.acc_indices, np.ones_like(adaoja.acc_indices) * true_evar, label='Offline SVD')
+        plt.plot(adaoja.acc_indices, np.ones_like(adaoja.acc_indices) * true_evar, color='purple', label='Offline SVD')
 
 
     plt.legend(loc='best')
@@ -39,13 +39,18 @@ def plot_hpca_ada(adaoja, hpca, data_name, true_evar=None):
 class compare_lr(object):
     def __init__(self, base=2., lower=-10, upper=10, test_index=0):
         '''
-        Initializes an object to compare Oja to AdaOja for different learning rates
+        Initializes an object to compare Oja to AdaOja for different learning
+        rates
         Inputs:
-            base: optional float > 0, the base for the chosen c values. Default 2.
+            base: optional float > 0, the base for the chosen c values.
+                Default 2.
             lower: optional float, determines the lower bound base^lower <= c
-            upper: optional float, determines the upper bound base^upper >= c. Note c will range between [base^lower, base^{lower+1}, ... base^{upper}]
-            test_index: optional int > 0, default is 0. If test_index > 0, then the accuracy at the test_index will be reported for each c value.
-                If test_index=0, then the accuracy at the final step will be reported for each c value.
+            upper: optional float, determines the upper bound base^upper >= c.
+                Note c will range between [base^lower, ... base^{upper}]
+            test_index: optional int > 0, default is 0. If test_index > 0, then
+                the accuracy at the test_index will be reported for each c value.
+                If test_index=0, then the accuracy at the final step will be
+                reported for each c value.
 
         '''
         self.base, self.lower, self.upper, self.test_index = base, lower, upper, test_index
@@ -56,30 +61,33 @@ class compare_lr(object):
 
     def run_cval_bag(self, filename, k, B=10, b0=1e-5, m=1, Sparse=True, X=None, xnorm2=None):
         '''
-        This runs several streaming PCA algorithms simultaneously on bag of words data for a range of constant values c.
+        This runs several streaming PCA algorithms simultaneously on bag of
+        words data for a range of constant values c.
 
         Inputs:
         ----------------------------------------------
         filename: The name of the file containing the bag-of-words data
-        k: int, the number of top eigenvectors to compute using the streaming PCA algorithms
+        k: int, the number of top eigenvectors to compute using the streaming
+            PCA algorithms
         B: optional int, the batch size for the streaming methods
-        b0: optional float > 0, default 1e-5. The initial "guess" for the learning rate parameter
-            for adagrad
-        Sparse: optional Bool, default False. Indicates whether the samples
-            are added in as sparse or dense arrays.
-        X: Nonetype, nxd array, or list of Bval x d blocks Xi s.t. Xi make up the
-            rows of X (note the last block in X may not be of length Bval, but all other blocks
-            are assumed to have the same number of rows).
+        b0: optional float > 0, default 1e-5. The initial "guess" for the
+            learning rate parameter for adagrad
+        Sparse: optional Bool, default False. Indicates whether the samples are
+            added in as sparse or dense arrays.
+        X: Nonetype, nxd array, or list of Bval x d blocks Xi s.t. Xi make up
+            the rows of X (note the last block in X may not be of length Bval,
+            but all other blocks are assumed to have the same number of rows).
             X must be provided if Acc=True.
         xnorm2: optional float, the squared frobenius norm of the full dataset
 
         Produces:
         ---------------------------------------------------------
-        self.lin_acc: the list of final accuracies (or test_index accuracies) for Oja's method with
-            stepsize c/t for c in self.cvals
-        self.sqrt_acc: the list of final accuracies (or test_index accuracies) for Oja's method with
-            stepsize c/sqrt(t) for c in self.cvals
-        self.adaoja_acc: the single accuracy value for adaoja on the given dataset (since this doesn't tune hyperparameters)
+        self.lin_acc: the list of final accuracies (or test_index accuracies)
+            for Oja's method with stepsize c/t for c in self.cvals
+        self.sqrt_acc: the list of final accuracies (or test_index accuracies)
+            for Oja's method with stepsize c/sqrt(t) for c in self.cvals
+        self.adaoja_acc: the single accuracy value for adaoja on the given
+            dataset (since this doesn't tune hyperparameters)
         self.adaoja: StreamingPCA AdaOja object
         '''
         self.B = B
@@ -152,29 +160,33 @@ class compare_lr(object):
 
     def run_cval_fullX(self, X, k, B=10, b0=1e-5, m=1, Sparse=False, xnorm2=None):
         '''
-        This runs several streaming PCA algorithms simultaneously on data that is provided in array X
+        This runs several streaming PCA algorithms simultaneously on data that
+        is provided in array X
         Inputs:
         ----------------------------------------------
-        X: an n x d array of data, can be sparse or dense (see Sparse boolean parameter).
-        k: int, the number of top eigenvectors to compute using the streaming PCA algorithms
+        X: an n x d array of data, can be sparse or dense (see Sparse boolean
+            parameter).
+        k: int, the number of top eigenvectors to compute using the streaming
+            PCA algorithms
         B: optional int, the batch size for the streaming methods, default 10.
-        b0: optional float > 0, default 1e-5. The initial "guess" for the learning rate parameter
-            for AdaOja.
-        m: optional int > 0, default 1. The number of convergence iterations
-                per block.
-        Sparse: optional Bool, default False. Indicates whether the samples
-            are added in as sparse or dense arrays.
-        xnorm2: optional float, the squared frobenius norm of X. Used in accuracy
-            calculation.
+        b0: optional float > 0, default 1e-5. The initial "guess" for the
+            learning rate parameter for AdaOja.
+        m: optional int > 0, default 1. The number of convergence iterations per
+            block.
+        Sparse: optional Bool, default False. Indicates whether the samples are
+            added in as sparse or dense arrays.
+        xnorm2: optional float, the squared frobenius norm of X. Used in
+            accuracy calculation.
 
 
         Produces:
         ---------------------------------------------------------
-        self.lin_acc: the list of final accuracies (or test_index accuracies) for Oja's method with
-            stepsize c/t for c in self.cvals
-        self.sqrt_acc: the list of final accuracies (or test_index accuracies) for Oja's method with
-            stepsize c/sqrt(t) for c in self.cvals
-        self.adaoja_acc: the single accuracy value for adaoja on the given dataset (since this doesn't tune hyperparameters)
+        self.lin_acc: the list of final accuracies (or test_index accuracies)
+            for Oja's method with stepsize c/t for c in self.cvals
+        self.sqrt_acc: the list of final accuracies (or test_index accuracies)
+            for Oja's method with stepsize c/sqrt(t) for c in self.cvals
+        self.adaoja_acc: the single accuracy value for adaoja on the given
+            dataset (since this doesn't tune hyperparameters)
         self.adaoja: StreamingPCA AdaOja object
         '''
         self.B = B
@@ -224,27 +236,31 @@ class compare_lr(object):
 
     def run_cval_blocklist(self, Xlist, k, b0=1e-5, m=1, Sparse=True, xnorm2=None):
         '''
-        This runs several streaming PCA methods simultaneously on a dataset provided as a list of blocks
+        This runs several streaming PCA methods simultaneously on a dataset
+        provided as a list of blocks
 
         Inputs:
         ----------------------------------------------
-        Xlist: A list of B x d datablocks that make up the dataset. Note the final block may not be B x d if n % d > 0.
-        k: int, the number of top eigenvectors to compute using the streaming PCA algorithms
-        b0: optional float > 0, default 1e-5. The initial "guess" for the learning rate parameter
-            for adagrad
+        Xlist: A list of B x d datablocks that make up the dataset. Note the
+            final block may not be B x d if n % d > 0.
+        k: int, the number of top eigenvectors to compute using the streaming
+            PCA algorithms
+        b0: optional float > 0, default 1e-5. The initial "guess" for the
+            learning rate parameter for adagrad
         m: optional int > 0, default 1. The number of convergence iterations
                 per block.
-        Sparse: optional Bool, default False. Indicates whether the samples
-            are added in as sparse or dense arrays.
+        Sparse: optional Bool, default False. Indicates whether the samples are
+            added in as sparse or dense arrays.
         xnorm2: optional float, the squared frobenius norm of X.
 
         Produces:
         ---------------------------------------------------------
-        self.lin_acc: the list of final accuracies (or test_index accuracies) for Oja's method with
-            stepsize c/t for c in self.cvals
-        self.sqrt_acc: the list of final accuracies (or test_index accuracies) for Oja's method with
-            stepsize c/sqrt(t) for c in self.cvals
-        self.adaoja_acc: the single accuracy value for adaoja on the given dataset (since this doesn't tune hyperparameters)
+        self.lin_acc: the list of final accuracies (or test_index accuracies)
+            for Oja's method with stepsize c/t for c in self.cvals
+        self.sqrt_acc: the list of final accuracies (or test_index accuracies)
+            for Oja's method with stepsize c/sqrt(t) for c in self.cvals
+        self.adaoja_acc: the single accuracy value for adaoja on the given
+            dataset (since this doesn't tune hyperparameters)
         self.adaoja: StreamingPCA AdaOja object
         '''
 
@@ -288,9 +304,9 @@ class compare_lr(object):
         dataname: str, the name of the dataset
         figname: str, the name of the figure to save. Typically ends in .png
         true_evar: None or optional positive float between 0 and 1.
-            The explained variance for the top k true eigenvectors of the covariance
-            matrix (typically the sample covariance matrix).
-            This allows us to compare our methods to the best case, offline result.
+            The explained variance for the top k true eigenvectors of the
+            covariance matrix (typically the sample covariance matrix). This
+            allows us to compare our methods to the best case, offline result.
         '''
         assert self.lin_acc is not None, "Objects to plot have not yet been initialized"
 
@@ -308,7 +324,7 @@ class compare_lr(object):
         # If the true explained variance is given, plot it
         if true_evar is not None:
             assert true_evar >= 0 and true_evar <=1, "The true explained variance should be a float > 0"
-            plt.plot(np.log(self.cvals), np.ones_like(self.cvals) * true_evar, label='Offline SVD')
+            plt.plot(np.log(self.cvals), np.ones_like(self.cvals) * true_evar, color='purple', label='Offline SVD')
 
         plt.xlabel('log(c)')
         plt.ylabel('Explained Variance')
@@ -319,13 +335,15 @@ class compare_lr(object):
 
     def plot_bvals(self, dataname, figname, loglog=True):
         '''
-        Plots the learning rates generated by AdaOja against the best case c/t and c/sqrt(t)
-        learning rates.
+        Plots the learning rates generated by AdaOja against the best case c/t
+        and c/sqrt(t) learning rates.
 
         Inputs:
         --------------------------------
         dataname: str, the name of the dataset
         figname: str, the name of the figure to save. Typically ends in .png
+        loglog: optional bool, default True. Indicates whether to plot loglog
+        scale
         '''
         title = ('Learning Rates for Oja vs AdaOja\n' + dataname)
 

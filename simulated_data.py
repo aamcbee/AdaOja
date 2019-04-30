@@ -58,17 +58,17 @@ def random_multinomial(n, d, trials=100, mean0 = True, scale=1):
     Input:
         n: int, number of samples
         d: int, dimension of samples
-        trials: optional int, the number of trials for each sample from the multinomial distribution
-           default is 100.
-        mean0: optional boolean, default True. Indicates whether to normalize the samples
-            so they are mean 0.
+        trials: optional int, the number of trials for each sample from the
+            multinomial distribution default is 100.
+        mean0: optional boolean, default True. Indicates whether to normalize
+            the samples so they are mean 0.
 
     Output:
        cov: d x d array, the covariance matrix for the distribution
        e: d-dimensional array, the eigenvalues of the covariance matrix
        v: d x d array, the eigenvectors of the covariance matrix
-       X: n x d array of n d-dimensional samples from the random_dirichlet distribution
-           with covariance cov.
+       X: n x d array of n d-dimensional samples from the random_dirichlet
+            distribution with covariance cov.
     '''
     # Initialize p values
     p = np.random.rand(d)
@@ -105,16 +105,16 @@ def random_dirichlet(n, d, mean0=True, scale=1):
     Input:
         n: int, number of samples
         d: int, dimension of samples
-        mean0: optional boolean, default True. Indicates whether to normalize the samples
-            so they are mean 0.
+        mean0: optional boolean, default True. Indicates whether to normalize
+            the samples so they are mean 0.
 
     Output:
        cov: d x d array, the covariance matrix for the distribution
        e: d-dimensional array, the eigenvalues of the covariance matrix
        v: d x d array, the eigenvectors of the covariance matrix
            (note the eigenvectors are columns of the array, in descending order)
-       X: n x d array of n d-dimensional samples from the random_dirichlet distribution
-           with covariance cov.
+       X: n x d array of n d-dimensional samples from the random_dirichlet
+            distribution with covariance cov.
     '''
     # Initialize a random set of parameters a drawn from the
     # uniform distribution.

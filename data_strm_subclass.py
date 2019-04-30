@@ -20,14 +20,19 @@ def get_bagX(filename, Acc=True):
 
     Outputs:
     -------------------------------------------------------------------
-    n: int, the number of samples in the dataset (in this case, the number of documents)
-    d: int, the number of features in the dataset (in this case, the number of words)
+    n: int, the number of samples in the dataset (in this case, the number of
+        documents)
+    d: int, the number of features in the dataset (in this case, the number of
+        words)
     nnz: int, the number of nonzero values in the dataset
-    density: float between 0 and 1, the density of the dataset (indicates sparsity)
-    SparseX: sparse nxd csr matrix where each row is a document and each column is a word
-    norm2: optional output (returns if Acc=True). The frobenius norm squared of the dataset
-        Note that if you want to compute the explained variance for your streaming
-        PCA algorithm, you need the squared frobenius norm of the dataset.
+    density: float between 0 and 1, the density of the dataset (indicates
+        sparsity)
+    SparseX: sparse nxd csr matrix where each row is a document and each column
+        is a word
+    norm2: optional output (returns if Acc=True). The frobenius norm squared of
+        the dataset. Note that if you want to compute the explained variance for
+        your streaming PCA algorithm, you need the squared frobenius norm of the
+        dataset.
     '''
     DWN = np.genfromtxt(filename, max_rows=3)
     # D is the number of samples (n), W is the number of words (d) and N
@@ -44,23 +49,29 @@ def get_bagX(filename, Acc=True):
 
 def get_bagXblocks(filename, B, Acc=True, block_total=1000):
     '''
-    Reads in bag of words data and returns the properties as well as a list of sparse blocks
+    Reads in bag of words data and returns the properties as well as a list of
+    sparse blocks
 
     Inputs:
     --------------------------------------------------------------------
     filename: str, name of the file containing the bag of words data
     B: int, the number of rows in each block
-    Acc: optional bool, indicates whether or not the accuracy will be measured for this dataset
-        If True, returns the norm of the dataset as well.
+    Acc: optional bool, indicates whether or not the accuracy will be measured
+        for this dataset. If True, returns the norm of the dataset as well.
 
     Outputs:
     -------------------------------------------------------------------
-    n: int, the number of samples in the dataset (in this case, the number of documents)
-    d: int, the number of features in the dataset (in this case, the number of words)
+    n: int, the number of samples in the dataset (in this case, the number of
+        documents)
+    d: int, the number of features in the dataset (in this case, the number of
+        words)
     nnz: int, the number of nonzero values in the dataset
-    density: float between 0 and 1, the density of the dataset (indicates sparsity)
-    SparseX: sparse nxd csr matrix where each row is a document and each column is a word
-    norm2: optional output (returns if Acc=True). The frobenius norm squared of the dataset
+    density: float between 0 and 1, the density of the dataset (indicates
+        sparsity)
+    SparseX: sparse nxd csr matrix where each row is a document and each column
+        is a word
+    norm2: optional output (returns if Acc=True). The frobenius norm squared of
+        the dataset
     '''
 
     Xblocks=[]
@@ -119,7 +130,8 @@ def get_bagXblocks(filename, B, Acc=True, block_total=1000):
 
 def run_sim_bag(filename, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, X=None, xnorm2=None, num_acc=100, Time=True):
     '''
-    This runs several streaming PCA algorithms simultaneously on bag of words data
+    This runs several streaming PCA algorithms simultaneously on bag of words
+    data
 
     Inputs:
     ----------------------------------------------------------------------------
@@ -199,7 +211,8 @@ def run_sim_bag(filename, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, X=None, 
 
 def run_sim_fullX(X, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, xnorm2=None, num_acc=100, Time=True, num_samples=None):
     '''
-    This runs several streaming PCA algorithms simultaneously on data that is provided in array X
+    This runs several streaming PCA algorithms simultaneously on data that is
+    provided in array X
     '''
     n, d = X.shape
 
@@ -237,7 +250,8 @@ def run_sim_fullX(X, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, xnorm2=None, 
 
 def run_sim_blocklist(Xlist, k, b0=1e-5, c_lin=1, c_sqrt=1, m=1, Sparse=True, Acc=True, xnorm2=None, num_acc=100, Time=True):
     '''
-    This runs several streaming PCA methods simultaneously on a dataset provided as a list of blocks
+    This runs several streaming PCA methods simultaneously on a dataset
+    provided as a list of blocks
     '''
     B, d = Xlist[0].shape
     adaoja = stsb.AdaOja(d, k, b0=b0, B=B, Sparse=Sparse, Acc=Acc, X=Xlist, xnorm2=xnorm2, num_acc=num_acc, Time=Time)

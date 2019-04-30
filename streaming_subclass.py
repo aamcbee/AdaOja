@@ -11,9 +11,10 @@ def list_exp_var(Xlist, Q, xnorm2):
     Obtains the explained variance for a dataset X given as a list of blocks.
     Inputs:
     ---------------------------
-    Xlist: a list of Bxd arrays (the final element of the list may have different first dimension depending on n).
-        This makes up a n x d dataset.
-    Q: a dense d x k array. The vectors for which you are computing the explained variance.
+    Xlist: a list of Bxd arrays (the final element of the list may have different
+        first dimension depending on n). This makes up a n x d dataset.
+    Q: a dense d x k array. The vectors for which you are computing the
+        explained variance.
     xnorm2: float > 0, the squared frobenius norm of X.
 
     Outputs:
@@ -31,9 +32,12 @@ def list_xnorm2(Xlist, ord='fro', Sparse=True):
     Obtains the frobenius norm squared for a dataset X given as a list of blocks
     Inputs:
     ---------------------------
-    Xlist: a list of Bxd arrays making up a n x d dataset X. The final element of the list may have different first dimension depending on n.
-    ord: optional str or int, the order of the norm to compute. Default 'fro', the frobenius norm.
-    Sparse: optional bool, default True. Indicates whether the elements of Xlist are sparse or dense.
+    Xlist: a list of Bxd arrays making up a n x d dataset X. The final element
+        of the list may have different first dimension depending on n.
+    ord: optional str or int, the order of the norm to compute. Default 'fro',
+        the frobenius norm.
+    Sparse: optional bool, default True. Indicates whether the elements of Xlist
+        are sparse or dense.
 
     Outputs:
     ---------------------------
@@ -78,14 +82,15 @@ class StreamingPCA(object):
                 are added in as sparse or dense arrays.
             Acc: optional Bool, default False. Indicates whether the accuracy,
                 here the explained variance, is computed at each block step
-            X: Nonetype, nxd array, or list of Bval x d blocks Xi s.t. Xi make up the
-                rows of X (note the last block in X may not be of length Bval, but all other blocks
-                are assumed to have the same number of rows).
-                X must be provided if Acc=True.
+            X: Nonetype, nxd array, or list of Bval x d blocks Xi s.t. Xi make
+                up the rows of X (note the last block in X may not be of length
+                Bval, but all other blocks are assumed to have the same number
+                of rows). X must be provided if Acc=True.
             xnorm2: The squared frobenius norm of X.
-            num_acc: optional number of accuracy readings to take out of all possible block samples. Acc <= int(n/B)
-            Time: optional Bool, default False. Indicates whether or not to
-                time the implementation
+            num_acc: optional number of accuracy readings to take out of all
+                possible block samples. Acc <= int(n/B)
+            Time: optional Bool, default False. Indicates whether or not to time
+                the implementation
         '''
         # Check to make sure the type requirements are fulfilled
         if not float(d).is_integer():
@@ -141,7 +146,8 @@ class StreamingPCA(object):
 
     def acc_init(self, X, num_acc):
         '''
-        Initializes the class structures needed to compute the accuracy for num_acc number of steps
+        Initializes the class structures needed to compute the accuracy for
+            num_acc number of steps
         '''
         # Initialize the list of accuracies
         self.accQ = []
@@ -206,8 +212,8 @@ class StreamingPCA(object):
         '''
         Adds B x d block of samples Xi to the model.
         Note in this method we want to make sure B is consistent at each step
-        but it would be easy to modify the code to allow for varied B values over
-        time.
+        but it would be easy to modify the code to allow for varied B values
+        over time.
 
         Inputs:
             Xi: B x d block of samples. If self.Sparse = True, this is a sparse
@@ -277,7 +283,8 @@ class StreamingPCA(object):
 
     def plot(self, dataname):
         '''
-        Plots the explained variance and/or the time depending on whether they were collected.
+        Plots the explained variance and/or the time depending on whether they
+        were collected.
         Inputs:
             dataname: str, name for the data
         '''
@@ -305,8 +312,11 @@ class Oja(StreamingPCA):
     def __init__(self, d, k, c=1., B=10, Sqrt=True, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False, single_acc_B_index=10):
         '''
         Initialize the Oja's method object.
-        c = optional float, the constant that determines the scale of the learning rate.
-            Default 1.
+        c: optional float, the constant that determines the scale of the
+            learning rate. Default 1.
+        Sqrt: optional bool, default True. This defines the learning rate choice
+            for Oja's method. If Sqrt = True, then the learning rate will be
+            c/sqrt(t), otherwise it will be set to c/t.
 
         '''
         StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
@@ -352,7 +362,8 @@ class AdaOja(StreamingPCA):
         '''
         b0: optional float, default 1e-5. The initial "guess" for the learning
             rate parameter in adagrad.
-        update_norm: optional parameter. Indicates the order of the norm used to compute the learning rate. Default 2.
+        update_norm: optional parameter. Indicates the order of the norm used to
+            compute the learning rate. Default 2.
         '''
         StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
         if not float(single_acc_B_index).is_integer():
@@ -395,8 +406,8 @@ class AdaOja(StreamingPCA):
 
 class HPCA(StreamingPCA):
     '''
-    Implements the history PCA method from "Histoy PCA: a New Algorithm for Streaming PCA" by
-    Yang, Hsieh and Wang.
+    Implements the history PCA method from "Histoy PCA: a New Algorithm for
+        Streaming PCA" by Yang, Hsieh and Wang.
     '''
     def __init__(self, d, k, B=10, m=1, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
         '''
@@ -427,7 +438,8 @@ class HPCA(StreamingPCA):
 
 class Noisy_PM(StreamingPCA):
     '''
-    Implements the block power method found in "Memory Limited, Streaming PCA" by Mitliagkas, Caramanis, and Jain
+    Implements the block power method found in "Memory Limited, Streaming PCA"
+        by Mitliagkas, Caramanis, and Jain
     '''
     def __init__(self, d, k, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
         StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
@@ -442,12 +454,11 @@ class Noisy_PM(StreamingPCA):
 
 class PM_momentum(StreamingPCA):
     '''
-    Implements the Mini-batch Power Method with Momentum found in "Accelerate Stochastic Power Iteration"
-    by De Sa, He, Mitliagkas, Re, and Xu.
+    Implements the Mini-batch Power Method with Momentum found in "Accelerated
+        Stochastic Power Iteration" by De Sa, He, Mitliagkas, Re, and Xu.
     '''
-    def __init__(self, d, k, beta, B=10, m=1, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
+    def __init__(self, d, k, beta, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
         StreamingPCA.__init__(d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
-        self.m = m
     def dense_update(self):
         pass
     def sparse_update(self):
