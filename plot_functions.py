@@ -382,3 +382,29 @@ class compare_lr(object):
         plt.title(title)
         plt.savefig(figname)
         plt.show()
+
+
+class compare_time(object):
+    def __init__(self, data_method):
+        supported_data_methods = ['bag', 'blocklist', 'fullX']
+        if data_method is not in supported_data_methods:
+            raise ValueError('Invalid data method. Supported data methods are "bag", "blocklist" and "fullX"')
+        self.data_method = data_method
+
+    def run_sim_tavg(self, data, k, B=10, Sparse=True, avg=5):
+        for i in range(avg):
+            if self.data_method == 'bag':
+                ada_time, hpca_time = dssb.run_sim_bag(data, k, B=B, Acc=False, Time=True)
+            if self.data_method = 'blocklist':
+                ada_time, hpca_time = dssb.run_sim_blocklist(data, k, Sparse=Sparse, Acc=False, Time=True)
+            if self.data_method = 'fullX':
+                ada_time, hpca_time = dssb.run_sim_fullX(data, k, B=B, Sparse=Sparse, Acc=False, Time=True)
+
+            if i==0:
+                self.ada_tavg = np.array(ada_time.time_vals)
+                self.hpca_tavg = np.array(hpca_time.time_vals)
+            else:
+                self.ada_tavg += ada_CIFAR.time_vals
+                self.hpca_tavg += hpca_CIFAR.time_vals
+        self.ada_tavg /= avg
+        self.hpca_tavg /= hpca
