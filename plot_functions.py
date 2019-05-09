@@ -9,15 +9,15 @@ import streaming_subclass as stsb
 import data_strm_subclass as dssb
 
 
-def plot_hpca_ada(adaoja, hpca, data_name, fig_name=None, true_evar=None):
+def plot_hpca_ada(adaoja, hpca, dataname, figname=None, true_evar=None):
     '''
     Plots and saves the explained variance for AdaOja vs HPCA for a given dataset.
     Input:
         adaoja: an AdaOja class object (see streaming_subclass.py for details)
         hpca: an HPCA class object (see streaming_subclass.py for details)
-        data_name: str, name for the data being applied
-        fig_name: None or optional string, the name of the figure to be saved.
-            if fig_name = None, default fig_name is 'hpcavada_' + data_name +
+        dataname: str, name for the data being applied
+        figname: None or optional string, the name of the figure to be saved.
+            if figname = None, default figname is 'hpcavada_' + dataname +
             '_k' + str(k) + '.png'.
         true_evar: None or optional positive float between 0 and 1. The
             explained variance for the top k true eigenvectors of the covariance
@@ -34,13 +34,13 @@ def plot_hpca_ada(adaoja, hpca, data_name, fig_name=None, true_evar=None):
 
 
     plt.legend(loc='best')
-    plt.title('HPCA vs AdaOja\n' + data_name + ', k=' + str(k))
+    plt.title('HPCA vs AdaOja\n' + dataname + ', k=' + str(k))
     plt.xlabel('Number of samples')
     plt.ylabel('Explained Variance')
-    if fig_name is None:
-        plt.savefig('hpcavada_' + data_name + '_k' + str(k) + '.png')
+    if figname is None:
+        plt.savefig('hpcavada_' + dataname + '_k' + str(k) + '.png')
     else:
-        plt.savefig(fig_name)
+        plt.savefig(figname)
     plt.show()
 
 class compare_lr(object):
@@ -411,11 +411,22 @@ class compare_time(object):
         self.ada_tavg /= self.avg
         self.hpca_tavg /= self.avg
 
-    def plot_sim_tavg(self, data_name=''):
+    def plot_sim_tavg(self, dataname='', figname=None):
+        '''
+        This function plots and saves the average timings computed from run_sim_tavg against
+        each other.
+        Inputs:
+        Dataname: str, the name of the data to be incorporated into the title
+            and figure name.
+        '''
         plt.plot(self.ada_tavg, label='AdaOja')
         plt.plot(self.hpca_tavg, label='HPCA')
         plt.legend(loc='best')
         plt.xlabel('Number of Samples')
         plt.ylabel('Time (s)')
-        plt.title('Average total update time over ' + str(self.avg) + 'runs \n' + data_name + 'data, k=' + str(self.k))
+        plt.title('Average total update time over ' + str(self.avg) + 'runs \n' + dataname + ' data, k=' + str(self.k))
+        if figname is None:
+            plt.savefig(dataname + str(self.avg) + 'time.png')
+        else:
+            plt.savefig(figname)
         plt.show()

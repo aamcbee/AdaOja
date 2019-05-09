@@ -436,13 +436,63 @@ class HPCA(StreamingPCA):
             self.Q = la.qr(self.S1, mode='economic')[0]
         self.lam[:,0] = la.norm(self.S1, axis=0)
 
-class Noisy_PM(StreamingPCA):
+class SPM(StreamingPCA):
     '''
     Implements the block power method found in "Memory Limited, Streaming PCA"
         by Mitliagkas, Caramanis, and Jain
     '''
-    def __init__(self, d, k, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
-        StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+    def __init__(self, d, k, p, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
+        assert p >= k, "p must be >= k"
+        # Note we initialize our method with p rather than k, becaues this
+        # method can apparently obtain better convergence if a few extra vectors
+        # are computed, then truncated to k.
+        self.true_k, self.p = k, p
+        StreamingPCA.__init__(self, d, p, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+
+    def xnorm2_init(self, xnorm2):
+        # Make sure xnorm2 is initalized and take the first accuracy reading
+        self.xnorm2 = xnorm2
+        if self.islist:
+            # If the squared frobenius of X norm is not provided, calculate it yourself
+            if xnorm2 is None:
+                if self.Sparse:
+                    self.xnorm2 = list_xnorm2(self.X, Sparse=True)
+                else:
+                    self.xnorm2 = list_xnorm2(self.X, Sparse=False)
+            # Take an initial reading of the explained variance
+            self.accQ.append(list_exp_var(self.X, self.Q[:,:self.true_k], self.xnorm2))
+        else:
+            # If the squared frobenius of X norm is not provided, calculate it yourself
+            if xnorm2 is None:
+                if self.Sparse:
+                    self.xnorm2 = spla.norm(self.X, ord='fro')**2
+                else:
+                    self.xnorm2 = la.norm(self.X, ord='fro')**2
+            # Take an initial reading of the explained variance
+            self.accQ.append(la.norm(self.X.dot(self.Q[:,:self.true_k]), ord='fro')**2 / self.xnorm2)
+
+    def get_Acc(self, final_sample):
+        '''
+        Calculates the accuracy for the current set of vectors
+        self.Q[:,:self.true_k]. Note we must necessarily redefine this function
+        since the algorithm calculates extra vectors.
+        '''
+        # Calculate the accuracy
+        if self.islist:
+            self.accQ.append(list_exp_var(self.X, self.Q[:,:self.true_k], self.xnorm2))
+        else:
+            self.accQ.append(la.norm(self.X.dot(self.Q[:,:self.true_k]), ord='fro')**2 / self.xnorm2)
+
+        # Update the current accuracy number
+        self.curr_acc_num += self.accBsize
+
+        # Append the block number associated with the accuracy reading
+        if final_sample:
+            self.acc_indices.append(self.n)
+        else:
+            self.acc_indices.append(self.sample_num)
+
+
 
     def dense_update(self):
         S = self.Xi.T @ (self.Xi @ self.Q)
