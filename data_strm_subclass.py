@@ -128,7 +128,7 @@ def get_bagXblocks(filename, B, Acc=True, block_total=1000):
 # Run the dataset simultaneously for multiple algorithms
 # Currently: Oja with learning rates c/t and c/sqrt(t), AdaOja, and HPCA
 
-def run_sim_bag(filename, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, X=None, xnorm2=None, num_acc=100, Time=True):
+def run_sim_bag(filename, k, b0=1e-5, p=None, B=10, m=1, Sparse=True, Acc=True, X=None, xnorm2=None, num_acc=100, Time=True):
     '''
     This runs several streaming PCA algorithms simultaneously on bag of words
     data
@@ -140,6 +140,8 @@ def run_sim_bag(filename, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, X=None, 
         algorithms
     b0: optional float > 0, default 1e-5. The initial "guess" for the learning
         rate parameter for adagrad
+    p: optional int, default None (which initializes to k). p >= k, the number
+        of vectors used in the SPM method.
     B: optional int, the batch size for the streaming methods. Default 10.
     m: optional int > 0, default 1. The number of convergence iterations per
         block for HPCA
@@ -158,6 +160,9 @@ def run_sim_bag(filename, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, X=None, 
         implementation.
     Outputs:
     ----------------------------------------------------------------------------
+    adaoja =
+    hpca =
+    spm =
     '''
     with open(filename, 'r') as f:
         n = int(f.readline())
@@ -167,7 +172,7 @@ def run_sim_bag(filename, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, X=None, 
         # Initialize the streaming objects
         adaoja = stsb.AdaOja(d, k, b0=b0, B=B, Sparse=Sparse, Acc=Acc, xnorm2=xnorm2, X=X, num_acc=num_acc, Time=Time)
         hpca = stsb.HPCA(d, k, B=B, m=m, Sparse=Sparse, Acc=Acc, xnorm2=xnorm2, X=X, num_acc=num_acc, Time=Time)
-
+        spm = stsb.SPM(d, k, p=p, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
         blocknum = 1
         row = []
         col = []
@@ -191,6 +196,7 @@ def run_sim_bag(filename, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, X=None, 
                     Xi[row, col] = data
                 adaoja.add_block(Xi)
                 hpca.add_block(Xi)
+                spm.add_block(Xi)
                 # Increase the block number
                 blocknum += 1
                 # Start the new block in the row, col, and data entries.
@@ -206,10 +212,11 @@ def run_sim_bag(filename, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, X=None, 
 
         adaoja.add_block(Xi, final_sample=True)
         hpca.add_block(Xi, final_sample=True)
+        spm.add_block(Xi, final_sample=True)
 
-        return adaoja, hpca
+        return adaoja, hpca, spm
 
-def run_sim_fullX(X, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, xnorm2=None, num_acc=100, Time=True, num_samples=None):
+def run_sim_fullX(X, k, b0=1e-5, p=None, B=10, m=1, Sparse=True, Acc=True, xnorm2=None, num_acc=100, Time=True, num_samples=None):
     '''
     This runs several streaming PCA algorithms simultaneously on data that is
     provided in array X
@@ -225,18 +232,19 @@ def run_sim_fullX(X, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, xnorm2=None, 
         endBsize = n - nblock * B
     adaoja = stsb.AdaOja(d, k, b0=b0, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
     hpca = stsb.HPCA(d, k, B=B, m=m, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+    spm = stsb.SPM(d, k, p=p, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
 
     for i in range(0, nblock*B, B):
         Xi = X[i:i+B]
         if endBsize == 0 and i == (nblock - 1) * B:
             adaoja.add_block(Xi, final_sample=True)
             hpca.add_block(Xi, final_sample=True)
-
+            spm.add_block(Xi, final_sample=True)
 
         else:
             adaoja.add_block(Xi)
             hpca.add_block(Xi)
-
+            spm.add_block(Xi)
 
     if endBsize > 0:
         if num_samples is not None:
@@ -245,10 +253,10 @@ def run_sim_fullX(X, k, b0=1e-5, B=10, m=1, Sparse=True, Acc=True, xnorm2=None, 
             Xi = X[nblock * B:]
         adaoja.add_block(Xi, final_sample=True)
         hpca.add_block(Xi, final_sample=True)
-    return adaoja, hpca
+        spm.add_block(Xi, final_sample=True)
+    return adaoja, hpca, spm
 
-
-def run_sim_blocklist(Xlist, k, b0=1e-5, c_lin=1, c_sqrt=1, m=1, Sparse=True, Acc=True, xnorm2=None, num_acc=100, Time=True):
+def run_sim_blocklist(Xlist, k, b0=1e-5, p=None, m=1, Sparse=True, Acc=True, xnorm2=None, num_acc=100, Time=True):
     '''
     This runs several streaming PCA methods simultaneously on a dataset
     provided as a list of blocks
@@ -256,16 +264,18 @@ def run_sim_blocklist(Xlist, k, b0=1e-5, c_lin=1, c_sqrt=1, m=1, Sparse=True, Ac
     B, d = Xlist[0].shape
     adaoja = stsb.AdaOja(d, k, b0=b0, B=B, Sparse=Sparse, Acc=Acc, X=Xlist, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
     hpca = stsb.HPCA(d, k, B=B, m=m, Sparse=Sparse, Acc=Acc, X=Xlist, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
-
+    spm = stsb.SPM(d, k, p=p, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
     nblocks = len(Xlist)
     for i in range(nblocks-1):
         adaoja.add_block(Xlist[i])
         hpca.add_block(Xlist[i])
+        spm.add_block(Xlist[i])
 
     adaoja.add_block(Xlist[-1], final_sample=True)
     hpca.add_block(Xlist[-1], final_sample=True)
+    spm.add_block(Xlist[-1], final_sample=True)
 
-    return adaoja, hpca
+    return adaoja, hpca, spm
 
 def run_adaoja_fullX(X, k, b0=1e-5, B=10, Sparse=False, Acc=True, xnorm2=None, num_acc=100, Time=True, num_samples=None):
     '''

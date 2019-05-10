@@ -9,9 +9,10 @@ import streaming_subclass as stsb
 import data_strm_subclass as dssb
 
 
-def plot_hpca_ada(adaoja, hpca, dataname, figname=None, true_evar=None):
+def plot_hpca_ada(adaoja, hpca, spm, dataname, figname=None, true_evar=None):
     '''
-    Plots and saves the explained variance for AdaOja vs HPCA for a given dataset.
+    Plots and saves the explained variance for AdaOja vs HPCA vs SPM (Streaming
+    power method) for a given dataset.
     Input:
         adaoja: an AdaOja class object (see streaming_subclass.py for details)
         hpca: an HPCA class object (see streaming_subclass.py for details)
@@ -27,18 +28,20 @@ def plot_hpca_ada(adaoja, hpca, dataname, figname=None, true_evar=None):
     k = adaoja.k
     plt.plot(adaoja.acc_indices, adaoja.accQ, '--', color='green', label='AdaOja')
     plt.plot(hpca.acc_indices, hpca.accQ, '-.', color='black', label='HPCA')
+    plt.plot(spm.acc_indices, spm.accQ, label='SPM')
 
+    # Plot the "true" ending explained variance if it is given
     if true_evar is not None:
         assert true_evar >= 0 and true_evar <=1, "The true explained variance should be a float > 0"
         plt.plot(adaoja.acc_indices, np.ones_like(adaoja.acc_indices) * true_evar, color='purple', label='Offline SVD')
 
 
     plt.legend(loc='best')
-    plt.title('HPCA vs AdaOja\n' + dataname + ', k=' + str(k))
+    plt.title('Streaming PCA comparison\n' + dataname + ', k=' + str(k))
     plt.xlabel('Number of samples')
     plt.ylabel('Explained Variance')
     if figname is None:
-        plt.savefig('hpcavada_' + dataname + '_k' + str(k) + '.png')
+        plt.savefig('Expvarcomp_' + dataname + '_k' + str(k) + '.png')
     else:
         plt.savefig(figname)
     plt.show()

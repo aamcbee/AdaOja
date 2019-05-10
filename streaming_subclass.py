@@ -403,7 +403,6 @@ class AdaOja(StreamingPCA):
         self.Q += G / self.b0
         self.Q = la.qr(self.Q, mode='economic')[0]
 
-
 class HPCA(StreamingPCA):
     '''
     Implements the history PCA method from "Histoy PCA: a New Algorithm for
@@ -441,7 +440,10 @@ class SPM(StreamingPCA):
     Implements the block power method found in "Memory Limited, Streaming PCA"
         by Mitliagkas, Caramanis, and Jain
     '''
-    def __init__(self, d, k, p, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
+    def __init__(self, d, k, p=None, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
+        if p is None:
+            p = k
+
         assert p >= k, "p must be >= k"
         # Note we initialize our method with p rather than k, becaues this
         # method can apparently obtain better convergence if a few extra vectors
@@ -459,7 +461,8 @@ class SPM(StreamingPCA):
                     self.xnorm2 = list_xnorm2(self.X, Sparse=True)
                 else:
                     self.xnorm2 = list_xnorm2(self.X, Sparse=False)
-            # Take an initial reading of the explained variance
+            # Take an initial reading of the explained variance. Note we
+            # truncate to the top k vectors
             self.accQ.append(list_exp_var(self.X, self.Q[:,:self.true_k], self.xnorm2))
         else:
             # If the squared frobenius of X norm is not provided, calculate it yourself
@@ -491,8 +494,6 @@ class SPM(StreamingPCA):
             self.acc_indices.append(self.n)
         else:
             self.acc_indices.append(self.sample_num)
-
-
 
     def dense_update(self):
         S = 1 / self.B * self.Xi.T @ (self.Xi @ self.Q)
