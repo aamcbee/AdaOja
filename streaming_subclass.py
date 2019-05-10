@@ -495,11 +495,11 @@ class SPM(StreamingPCA):
 
 
     def dense_update(self):
-        S = self.Xi.T @ (self.Xi @ self.Q)
+        S = 1 / self.B * self.Xi.T @ (self.Xi @ self.Q)
         self.Q = la.qr(S, mode='economic')[0]
 
     def sparse_update(self):
-        S = self.Xi.T.dot(self.Xi.dot(self.Q))
+        S = 1 / self.B * self.Xi.T.dot(self.Xi.dot(self.Q))
         self.Q = la.qr(S, mode='economic')[0]
 
 class PM_momentum(StreamingPCA):
