@@ -264,7 +264,7 @@ def run_sim_blocklist(Xlist, k, b0=1e-5, p=None, m=1, Sparse=True, Acc=True, xno
     B, d = Xlist[0].shape
     adaoja = stsb.AdaOja(d, k, b0=b0, B=B, Sparse=Sparse, Acc=Acc, X=Xlist, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
     hpca = stsb.HPCA(d, k, B=B, m=m, Sparse=Sparse, Acc=Acc, X=Xlist, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
-    spm = stsb.SPM(d, k, p=p, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+    spm = stsb.SPM(d, k, p=p, B=B, Sparse=Sparse, Acc=Acc, X=Xlist, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
     nblocks = len(Xlist)
     for i in range(nblocks-1):
         adaoja.add_block(Xlist[i])

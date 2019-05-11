@@ -33,7 +33,7 @@ def plot_hpca_ada(adaoja, hpca, spm, dataname, figname=None, true_evar=None):
     # Plot the "true" ending explained variance if it is given
     if true_evar is not None:
         assert true_evar >= 0 and true_evar <=1, "The true explained variance should be a float > 0"
-        plt.plot(adaoja.acc_indices, np.ones_like(adaoja.acc_indices) * true_evar, color='purple', label='Offline SVD')
+        plt.plot(adaoja.acc_indices, np.ones_like(adaoja.acc_indices) * true_evar, color='darkorange', label='Offline SVD')
 
 
     plt.legend(loc='best')
@@ -326,15 +326,16 @@ class compare_lr(object):
             num_samples = self.n
         else:
             num_samples = self.B * self.test_index
-        c_title = 'Explained variance after ' + str(num_samples) + ' samples, varying c\n' + dataname
-        plt.scatter(np.log(self.cvals), self.lin_acc, label=r'Oja, $\eta_i = c/t$')
-        plt.scatter(np.log(self.cvals), self.sqrt_acc, marker='+', color='k', label=r'Oja, $\eta_i = c/\sqrt{t}$')
-        plt.plot(np.log(self.cvals), np.ones_like(self.cvals) * self.adaoja_acc, '--', color='green', label='AdaOja')
 
         # If the true explained variance is given, plot it
         if true_evar is not None:
             assert true_evar >= 0 and true_evar <=1, "The true explained variance should be a float > 0"
-            plt.plot(np.log(self.cvals), np.ones_like(self.cvals) * true_evar, color='purple', label='Offline SVD')
+            plt.plot(np.log(self.cvals), np.ones_like(self.cvals) * true_evar, color='darkorange', label='Offline SVD')
+
+        plt.scatter(np.log(self.cvals), self.lin_acc, label=r'Oja, $\eta_i = c/t$')
+        plt.scatter(np.log(self.cvals), self.sqrt_acc, marker='+', color='k', label=r'Oja, $\eta_i = c/\sqrt{t}$')
+        plt.plot(np.log(self.cvals), np.ones_like(self.cvals) * self.adaoja_acc, '--', color='green', label='AdaOja')
+
 
         plt.xlabel('log(c)')
         plt.ylabel('Explained Variance')
@@ -395,24 +396,27 @@ class compare_time(object):
             raise ValueError('Invalid data method. Supported data methods are "bag", "blocklist" and "fullX"')
         self.data_method = data_method
 
-    def run_sim_tavg(self, data, k, B=10, Sparse=True, avg=5):
+    def run_sim_tavg(self, data, k, p=None, B=10, Sparse=True, avg=5):
         self.avg, self.k = avg, k
         for i in range(avg):
             if self.data_method == 'bag':
-                ada_time, hpca_time = dssb.run_sim_bag(data, self.k, B=B, Acc=False, Time=True)
+                ada_time, hpca_time, spm_time = dssb.run_sim_bag(data, self.k, p=p, B=B, Acc=False, Time=True)
             if self.data_method == 'blocklist':
-                ada_time, hpca_time = dssb.run_sim_blocklist(data, self.k, Sparse=Sparse, Acc=False, Time=True)
+                ada_time, hpca_time, spm_time = dssb.run_sim_blocklist(data, self.k, p=p, Sparse=Sparse, Acc=False, Time=True)
             if self.data_method == 'fullX':
-                ada_time, hpca_time = dssb.run_sim_fullX(data, self.k, B=B, Sparse=Sparse, Acc=False, Time=True)
+                ada_time, hpca_time, spm_time = dssb.run_sim_fullX(data, self.k, p=p, B=B, Sparse=Sparse, Acc=False, Time=True)
 
             if i==0:
                 self.ada_tavg = np.array(ada_time.time_vals)
                 self.hpca_tavg = np.array(hpca_time.time_vals)
+                self.spm_tavg = np.array(spm_time.time_vals)
             else:
                 self.ada_tavg += ada_time.time_vals
                 self.hpca_tavg += hpca_time.time_vals
+                self.spm_tavg += spm_time.time_vals
         self.ada_tavg /= self.avg
         self.hpca_tavg /= self.avg
+        self.spm_tavg /= self.avg
 
     def plot_sim_tavg(self, dataname='', figname=None):
         '''
@@ -424,6 +428,7 @@ class compare_time(object):
         '''
         plt.plot(self.ada_tavg, label='AdaOja')
         plt.plot(self.hpca_tavg, label='HPCA')
+        plt.plot(self.spm_tavg, label='SPM')
         plt.legend(loc='best')
         plt.xlabel('Number of Samples')
         plt.ylabel('Time (s)')
