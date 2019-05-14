@@ -503,14 +503,66 @@ class SPM(StreamingPCA):
         S = 1 / self.B * self.Xi.T.dot(self.Xi.dot(self.Q))
         self.Q = la.qr(S, mode='economic')[0]
 
-class PM_momentum(StreamingPCA):
+class PM_mom(StreamingPCA):
     '''
     Implements the Mini-batch Power Method with Momentum found in "Accelerated
         Stochastic Power Iteration" by De Sa, He, Mitliagkas, Re, and Xu.
     '''
-    def __init__(self, d, k, beta, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
-        StreamingPCA.__init__(d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+    def __init__(self, d, k, B=10, beta_update = 10, beta_scales = np.array([2/3, 0.99, 1, 1.01, 1.5]), Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
+        '''
+        beta_update: optional int > 0, the number of block iterations before
+            beta is updated.
+        '''
+        StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+        self.beta_update = beta_update
+        self.beta_scales = beta_scales
+        self.num_beta = beta_scales.size
+
+        self.Q_vals = self.Q * np.ones((self.num_beta, self.d, self.k))
+        self.R_vals = self.R * np.ones((self.num_beta, self.k, self.k))
+        self.Q0_vals = self.Q0 * np.ones((self.num_beta, self.d, self.k))\
+
+        self.rayleigh = np.zeros(self.num_beta)
+
+    def add_block(self, Xi, final_sample=False):
+        # Initialize beta given the first block
+        if self.sample_num == 0:
+            self.beta = la.norm(self.Xi.dot(self.Q_vals[i]), ord='fro')**4 / 2
+            self.beta_vals = self.beta * self.beta_scales
+
+        StreamingPCA.add_block(self, Xi, final_sample=final_sample)
+
+        # After self.beta_update iterations, update the beta value
+        if self.block_num % self.beta_update == 0:
+            self.choose_beta()
+
+    def choose_beta(self):
+        # Look at doing this with broadcasting
+        for i in range(self.num_beta):
+            self.rayleigh[i] = la.norm(self.Xi.dot(self.Q_vals[i]), ord='fro')**2
+        best_beta_index = np.argmax(self.rayleigh)
+        self.beta = self.beta_vals[best_beta_index]
+
+        # Update all values to the current best case values
+        self.Q_vals[:] = self.Q_vals[best_beta_index]
+        self.Q0_vals[:] = self.Q0_vals[best_beta_index]
+        self.R_vals[:] = self.R_vals[best_beta_index]
+        self.Q = self.Q_vals[best_beta_index]
+
+        self.beta_vals = self.beta * self.beta_scales
+
+
     def dense_update(self):
-        pass
+        # Look into doing this with broadcasting
+        for i in range(self.num_beta):
+            S = 1 / self.B * self.Xi.T @ (self.Xi @ self.Q_vals[i]) - self.beta_vals[i] * self.Q0_vals[i] @ la.inv(self.R_vals[i])
+            self.Q0_vals[i] = self.Q_vals[i]
+            self.Q_vals[i], self.R_vals[i] = la.qr(S, mode='economic')
+        self.Q = self.Q_vals[2]
+
     def sparse_update(self):
-        pass
+        for i in range(self.num_beta):
+            S = 1 / self.B * self.Xi.T.dot(self.Xi.dot(self.Q_vals[i])) - self.beta_vals[i] * self.Q0_vals[i].dot(la.inv(self.R_vals[i]))
+            self.Q0_vals[i] = self.Q_vals[i]
+            self.Q_vals[i], self.R_vals[i] = la.qr(S, mode='economic')
+        self.Q = self.Q_vals[2]
