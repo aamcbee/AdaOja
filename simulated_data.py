@@ -38,7 +38,7 @@ def spiked_covariance(n, d, k, sigma=.1):
             of the sample noise.
 
     Output:
-        cov: d x d array, the covariance matrix for the distibution
+        cov: d x d array, the true covariance matrix for the distibution
         w: d vector of the diagonal values from matrix D.
         A0: d x k array, the eigenvectors we want to estimate (note the
             eigenvectors are columns of the array, in descending order)
@@ -64,7 +64,7 @@ def random_multinomial(n, d, trials=100, mean0 = True, scale=1):
             the samples so they are mean 0.
 
     Output:
-       cov: d x d array, the covariance matrix for the distribution
+       cov: d x d array, the true covariance matrix for the distribution
        e: d-dimensional array, the eigenvalues of the covariance matrix
        v: d x d array, the eigenvectors of the covariance matrix
        X: n x d array of n d-dimensional samples from the random_dirichlet
@@ -109,7 +109,7 @@ def random_dirichlet(n, d, mean0=True, scale=1):
             the samples so they are mean 0.
 
     Output:
-       cov: d x d array, the covariance matrix for the distribution
+       cov: d x d array, the true covariance matrix for the distribution
        e: d-dimensional array, the eigenvalues of the covariance matrix
        v: d x d array, the eigenvectors of the covariance matrix
            (note the eigenvectors are columns of the array, in descending order)

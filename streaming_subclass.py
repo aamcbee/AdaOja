@@ -85,10 +85,11 @@ class StreamingPCA(object):
             X: Nonetype, nxd array, or list of Bval x d blocks Xi s.t. Xi make
                 up the rows of X (note the last block in X may not be of length
                 Bval, but all other blocks are assumed to have the same number
-                of rows). X must be provided if Acc=True.
-            xnorm2: The squared frobenius norm of X.
-            num_acc: optional number of accuracy readings to take out of all
-                possible block samples. Acc <= int(n/B)
+                of rows). X must be provided if Acc=True so the accuracy can be
+                computed.
+            xnorm2: optional float > 0, the squared frobenius norm of X.
+            num_acc: optional int, the number of accuracy readings to take out of all
+                possible block samples. We require num_acc <= int(n/B). Default 100.
             Time: optional Bool, default False. Indicates whether or not to time
                 the implementation
         '''
@@ -264,7 +265,8 @@ class StreamingPCA(object):
 
     def get_Acc(self, final_sample):
         '''
-        Calculates the accuracy for the current set of vectors self.Q
+        Calculates the accuracy for the current set of vectors self.Q.
+        Accuracy here is defined to be the explained variance.
         '''
         # Calculate the accuracy
         if self.islist:
@@ -356,7 +358,7 @@ class Oja(StreamingPCA):
 
 class AdaOja(StreamingPCA):
     '''
-    Implements the AdaOja algorithm with vector of learning rates.
+    Implements the AdaOja algorithm with a vector of learning rates.
     '''
     def __init__(self, d, k, b0=1e-5, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False, update_norm=2, single_acc_B_index=10):
         '''
@@ -452,6 +454,11 @@ class SPM(StreamingPCA):
         StreamingPCA.__init__(self, d, p, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
 
     def xnorm2_init(self, xnorm2):
+        '''
+        Because SPM initializes more vectors than it needs, we rewrite 
+        xnorm2_init to correctly calculate the accuracy with the true k 
+        value given.
+        '''
         # Make sure xnorm2 is initalized and take the first accuracy reading
         self.xnorm2 = xnorm2
         if self.islist:
@@ -479,6 +486,8 @@ class SPM(StreamingPCA):
         Calculates the accuracy for the current set of vectors
         self.Q[:,:self.true_k]. Note we must necessarily redefine this function
         since the algorithm calculates extra vectors.
+        Input: 
+            final_sample: Boolean that indicates whether this accuracy is the final accuracy to be obtained or not.
         '''
         # Calculate the accuracy
         if self.islist:

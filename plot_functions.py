@@ -26,6 +26,7 @@ def plot_hpca_ada(adaoja, hpca, spm, dataname, figname=None, true_evar=None):
             compare our methods to the "best case", offline result.
     '''
     k = adaoja.k
+    B = adaoja.B
     plt.plot(adaoja.acc_indices, adaoja.accQ, '--', color='green', label='AdaOja')
     plt.plot(hpca.acc_indices, hpca.accQ, '-.', color='black', label='HPCA')
     plt.plot(spm.acc_indices, spm.accQ, label='SPM')
@@ -37,11 +38,11 @@ def plot_hpca_ada(adaoja, hpca, spm, dataname, figname=None, true_evar=None):
 
 
     plt.legend(loc='best')
-    plt.title('Streaming PCA comparison\n' + dataname + ', k=' + str(k))
+    plt.title('Streaming PCA comparison\n' + dataname + ', k=' + str(k) + ', B=' + str(B))
     plt.xlabel('Number of samples')
     plt.ylabel('Explained Variance')
     if figname is None:
-        plt.savefig('Expvarcomp_' + dataname + '_k' + str(k) + '.png')
+        plt.savefig('Expvarcomp_' + dataname + '_k' + str(k) + '_B' + str(B) + '.png')
     else:
         plt.savefig(figname)
     plt.show()
