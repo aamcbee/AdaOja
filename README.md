@@ -1,7 +1,7 @@
 # AdaOja
 
 This repository contains the Python code that produces all of the experimental results from the paper ["AdaOja: Adaptive Learning Rates for Streaming PCA"](https://arxiv.org/abs/1905.12115).
-AdaOja is a new version of Oja's method with an adaptive learning rate that performs comparably to other state of the art methods and better than Oja's for standard learning rate choices such as $\eta_i = c/i, c/\sqrt{i}$.
+AdaOja is a new version of Oja's method with an adaptive learning rate that performs comparably to other state of the art methods and better than Oja's for standard learning rate choices such as eta_i = c/i, c/sqrt(i).
 The file <code>[streaming_subclass.py](./streaming_subclass.py)</code> provides the framework for several different algorithms--including AdaOja--for streaming principal component analysis and can easily be used for a wider set of problems and datasets than those presented here.
 
 
@@ -25,7 +25,7 @@ The key code containing our streaming PCA objects is found in <code>[streaming_s
 The main functionality for our PCA objects is found in <code>StreamingPCA</code>. Additionally, several subclasses are defined for specific algorithms:
 
 1. AdaOja <sup>1</sup>
-2. Oja: Oja's method <sup>2</sup> for learning rates $c/t$ and $c/\sqrt{t}$.
+2. Oja: Oja's method <sup>2</sup> for learning rates c/t and c/sqrt(t).
 3. HPCA: History Principal Component Analysis <sup>3</sup>
 4. SPM: Streaming Power Method. <sup>4, 5</sup>
 
@@ -53,13 +53,13 @@ Note that in order to run <code>[ExpVar_Comparison.ipynb](./ExpVar_Comparison.ip
 
 The file <code>[data_strm_subclass.py](./data_strm_subclass.py)</code> contains functions for parsing these bag-of-words text files in python.
 
-For example, for small bag-of-words datasets the dimensions $n$, $d$, the number of non-zeros, the density, the dataset (as a sparse $n \times d$ csr matrix) and the norm of the dataset squared are computed by running:
+For example, for small bag-of-words datasets the dimensions n, d, the number of non-zeros, the density, the dataset (as a sparse nxd csr matrix) and the norm of the dataset squared are computed by running:
 
 ```python
 n, d, nnz, dense, SpX, norm2 = dssb.get_bagX('docword.kos.txt')
 ```
 
-Alternatively, a list of the first $m$ sparse blocks of size $B$ can be returned by running the following:
+Alternatively, a list of the first m sparse blocks of size B can be returned by running the following:
 
 ```python
 n, d, nnz, dense, SpX, norm2 = dssb.get_bagXblocks('docword.nytimes.txt', B, block_total=m)
@@ -83,7 +83,7 @@ We generate our comparison plots in <code>[ExpVar_Comparison.ipynb](./ExpVar_Com
 These plots largely draw on two files: <code>[data_strm_subclass.py](./data_strm_subclass.py)</code> and <code>[plot_functions.py](./plot_functions.py)</code>.
 To run this file, download the CIFAR-10 dataset and Bag-of-Words datasets as outlined in the section above and make sure the necessary files are in your working directory.
 
-The file <code>[plot_functions.py](./plot_functions.py)</code> compares and visualizes the end explained variance achieved by Oja's method varying over $c$ for learning rates $\eta_i = c / i, c / \sqrt{i}$ compared to the end explained variance achieved by AdaOja.
+The file <code>[plot_functions.py](./plot_functions.py)</code> compares and visualizes the end explained variance achieved by Oja's method varying over c for learning rates eta_i = c / i, c / sqrt(i) compared to the end explained variance achieved by AdaOja.
 These methods are stored in the class <code>compare_lr</code>.
 It also plots HPCA, AdaOja, and SPM against each other using the function <code>plot_hpca_ada</code> in conjunction with the streaming methods from <code>[data_strm_subclass.py](./data_strm_subclass.py)</code>.
 
