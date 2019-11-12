@@ -311,7 +311,7 @@ class Oja(StreamingPCA):
     '''
     Class for Oja's streaming PCA method with learning rate c/sqrt(t) or c/t.
     '''
-    def __init__(self, d, k, c=1., B=10, Sqrt=True, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False, single_acc_B_index=10):
+    def __init(self, *args, c=1., Sqrt=True, single_acc_B_index=10, **kwargs):
         '''
         Initialize the Oja's method object.
         c: optional float, the constant that determines the scale of the
@@ -321,6 +321,7 @@ class Oja(StreamingPCA):
             c/sqrt(t), otherwise it will be set to c/t.
 
         '''
+        super().__init__(*args, **kwargs)
         StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
 
         if not float(single_acc_B_index).is_integer():
@@ -455,8 +456,8 @@ class SPM(StreamingPCA):
 
     def xnorm2_init(self, xnorm2):
         '''
-        Because SPM initializes more vectors than it needs, we rewrite 
-        xnorm2_init to correctly calculate the accuracy with the true k 
+        Because SPM initializes more vectors than it needs, we rewrite
+        xnorm2_init to correctly calculate the accuracy with the true k
         value given.
         '''
         # Make sure xnorm2 is initalized and take the first accuracy reading
@@ -486,7 +487,7 @@ class SPM(StreamingPCA):
         Calculates the accuracy for the current set of vectors
         self.Q[:,:self.true_k]. Note we must necessarily redefine this function
         since the algorithm calculates extra vectors.
-        Input: 
+        Input:
             final_sample: Boolean that indicates whether this accuracy is the final accuracy to be obtained or not.
         '''
         # Calculate the accuracy
@@ -511,6 +512,7 @@ class SPM(StreamingPCA):
     def sparse_update(self):
         S = 1 / self.B * self.Xi.T.dot(self.Xi.dot(self.Q))
         self.Q = la.qr(S, mode='economic')[0]
+
 
 class PM_mom(StreamingPCA):
     '''
@@ -591,3 +593,25 @@ class PM_mom(StreamingPCA):
             self.Q_vals[i], self.R_vals[i] = la.qr(S, mode='economic')
         # Set Q to be the result achieved by our current Q
         self.Q = self.Q_vals[self.one_index]
+
+
+class ADAM(StreamingPCA):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def dense_update(self):
+        pass
+
+    def sparse_update(self):
+        pass
+
+
+class RMSProp(StreamingPCA):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def dense_update(self):
+        pass
+
+    def sparse_update(self):
+        pass
