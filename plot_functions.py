@@ -47,6 +47,45 @@ def plot_hpca_ada(adaoja, hpca, spm, dataname, figname=None, true_evar=None):
         plt.savefig(figname)
     plt.show()
 
+
+def plot_mom_comp(adaoja, rmsp, adam, dataname, figname=None, true_evar=None):
+    '''
+    Plots and saves the explained variance for AdaOja vs RMSProp vs ADAM
+    Input:
+        adaoja: an AdaOja class object (see streaming_subclass.py for details)
+        rmsp: an RMSProp class object (see streaming_subclass.py for details)
+        adam: an ADAM class object (see streaming_subclass.py for details)
+        dataname: str, name for the data being applied
+        figname: None or optional string, the name of the figure to be saved.
+            if figname = None, default figname is 'hpcavada_' + dataname +
+            '_k' + str(k) + '.png'.
+        true_evar: None or optional positive float between 0 and 1. The
+            explained variance for the top k true eigenvectors of the covariance
+            matrix (typically the sample covariance matrix). This allows us to
+            compare our methods to the "best case", offline result.
+    '''
+    k = adaoja.k
+    B = adaoja.B
+    plt.plot(adaoja.acc_indices, adaoja.accQ, '--', color='green', label='AdaOja')
+    plt.plot(rmsp.acc_indices, rmsp.accQ, '-.', color='black', label='RMSProp')
+    plt.plot(adam.acc_indices, adam.accQ, label='ADAM')
+
+    # Plot the "true" ending explained variance if it is given
+    if true_evar is not None:
+        assert true_evar >= 0 and true_evar <=1, "The true explained variance should be a float > 0"
+        plt.plot(adaoja.acc_indices, np.ones_like(adaoja.acc_indices) * true_evar, color='darkorange', label='Offline SVD')
+
+
+    plt.legend(loc='best')
+    plt.title('Streaming PCA comparison\n' + dataname + ', k=' + str(k) + ', B=' + str(B))
+    plt.xlabel('Number of samples')
+    plt.ylabel('Explained Variance')
+    if figname is None:
+        plt.savefig('momcomp_' + dataname + '_k' + str(k) + '_B' + str(B) + '.png')
+    else:
+        plt.savefig(figname)
+    plt.show()
+
 class compare_lr(object):
     def __init__(self, base=2., lower=-10, upper=10, test_index=0):
         '''
