@@ -361,11 +361,11 @@ class AdaOja(StreamingPCA):
     '''
     Implements the AdaOja algorithm with a vector of learning rates.
     '''
-    def __init__(self, d, k, b0=1e-5, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False, update_norm=2, single_acc_B_index=10):
+    def __init__(self, d, k, b0=1e-5, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False, unorm=2, single_acc_B_index=10):
         '''
         b0: optional float, default 1e-5. The initial "guess" for the learning
             rate parameter in adagrad.
-        update_norm: optional parameter. Indicates the order of the norm used to
+        unorm: optional parameter. Indicates the order of the norm used to
             compute the learning rate. Default 2.
         '''
         StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
@@ -376,7 +376,7 @@ class AdaOja(StreamingPCA):
         if single_acc_B_index < 0:
             raise ValueError('single_acc_B_index must be nonnegative')
 
-        self.unorm, self.single_acc_B_index = update_norm, single_acc_B_index
+        self.unorm, self.single_acc_B_index = unorm, single_acc_B_index
         self.b0 = np.ones(self.k) * b0
         self.stepvals = [1 / self.b0]
 
@@ -600,18 +600,52 @@ class ADAM(StreamingPCA):
         super().__init__(*args, **kwargs)
 
     def dense_update(self):
-        pass
+        # Make a local variable for the current value of Q1
+        #Q0 = np.copy(self.Q)
+
+        G = self.Xi.T @ (self.Xi @ self.Q) / self.B
+        self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        self.stepvals.append(1/self.b0)
+        self.Q += G / self.b0
+        self.Q = la.qr(self.Q, mode='economic')[0]
 
     def sparse_update(self):
-        pass
+        # Make a local variable for the current value of Q1
+        #Q0 = np.copy(self.Q)
+
+        G = self.Xi.T.dot(self.Xi.dot(self.Q)) / self.B
+        self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        self.stepvals.append(1/self.b0)
+        self.Q += G / self.b0
+        self.Q = la.qr(self.Q, mode='economic')[0]
 
 
 class RMSProp(StreamingPCA):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, gamma=.9, eta=1e-3, b0=1e-5, unorm=2, **kwargs):
         super().__init__(*args, **kwargs)
+        self.gamma, self.eta, self.unorm = gamma, eta, unorm
+        self.b0 = np.ones(self.k) * b0
+        self.stepvals = []
+
 
     def dense_update(self):
-        pass
+        # Make a local variable for the current value of Q1
+        #Q0 = np.copy(self.Q)
+
+        G = self.Xi.T @ (self.Xi @ self.Q) / self.B
+        self.b0 = self.gamma * self.b0 + (1 - self.gamma) * np.linalg.norm(G, ord=self.unorm, axis=0)**2
+        self.Q += self.eta * G / np.sqrt(self.b0)
+        self.Q = la.qr(self.Q, mode='economic')[0]
+
+        self.stepvals.append(self.eta / np.sqrt(self.b0))
 
     def sparse_update(self):
-        pass
+        # Make a local variable for the current value of Q1
+        #Q0 = np.copy(self.Q)
+
+        G = self.Xi.T.dot(self.Xi.dot(self.Q)) / self.B
+        self.b0 = self.gamma * self.b0 + (1 - self.gamma) * np.linalg.norm(G, ord=self.unorm, axis=0)**2
+        self.Q += self.eta * G / np.sqrt(self.b0)
+        self.Q = la.qr(self.Q, mode='economic')[0]
+
+        self.stepvals.append(self.eta / np.sqrt(self.b0))
