@@ -596,13 +596,19 @@ class PM_mom(StreamingPCA):
 
 
 class ADAM(StreamingPCA):
-    def __init__(self, *args, eta=1e-3, beta_1 = 0.1, beta_2 = 0.999, delta=1e-8, unorm=2, bias_correction=False, vector_step=True, **kwargs):
+    def __init__(self, *args, eta=1e-3, beta_1 = 0.1, beta_2 = 0.999, delta=1e-8, unorm=2, bias_correction=False, b0_dim=1, **kwargs):
         super().__init__(*args, **kwargs)
-        self.eta, self.beta_1, self.beta_2, self.delta, self.unorm = eta, beta_1, beta_2, delta, unorm
-        if vector_step:
-            self.b0 = np.zeros(self.k)
-        else:
+        self.eta, self.beta_1, self.beta_2, self.delta, self.unorm, self.bias_correction, self.b0_dim = eta, beta_1, beta_2, delta, unorm, bias_correction, b0_dim
+
+        if self.b0_dim==0:
             self.b0 = 0
+        elif self.b0_dim ==1:
+            self.b0 = np.zeros(self.k)
+        elif self.b0_dim == 2:
+            self.b0 = np.zeros(self.d, self.k)
+        else:
+            raise ValueError("b0_dim options are 0: constant, 1: vector, or 2: matrix")
+
         self.m0 = np.zeros((self.d, self.k))
         self.stepvals = []
 
@@ -612,11 +618,15 @@ class ADAM(StreamingPCA):
 
         G = self.Xi.T @ (self.Xi @ self.Q) / self.B
         self.m0 = (self.beta_1 * self.m0 + (1 - self.beta_1) * G)
-        if vector_step:
-            self.b0 = (self.beta_2 * self.b0 + (1 - self.beta_2) * np.linalg.norm(G, ord=self.unorm, axis=0)**2)
-        else:
+
+        if self.b0_dim==0:
             self.b0 = (self.beta_2 * self.b0 + (1 - self.beta_2) * np.linalg.norm(G, ord=self.unorm)**2)
-        if bias_correction:
+        if self.b0_dim ==1:
+            self.b0 = (self.beta_2 * self.b0 + (1 - self.beta_2) * np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        if self.b0_dim == 2:
+            self.b0 = self.beta_2 * self.b0 + (1 - self.beta_2) * G**2
+
+        if self.bias_correction:
             self.m0 /= (1 - self.beta_1**self.sample_num)
             self.b0 /= (1 - self.beta_2**self.sample_num)
         self.stepvals.append(self.eta/(np.sqrt(self.b0) + self.delta))
@@ -629,17 +639,33 @@ class ADAM(StreamingPCA):
 
         G = self.Xi.T.dot(self.Xi.dot(self.Q)) / self.B
         self.m0 = (self.beta_1 * self.m0 + (1 - self.beta_1) * G)
-        self.b0 = (self.beta_2 * self.b0 + (1 - self.beta_2) * np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        if self.b0_dim==0:
+            self.b0 = (self.beta_2 * self.b0 + (1 - self.beta_2) * np.linalg.norm(G, ord=self.unorm)**2)
+        if self.b0_dim ==1:
+            self.b0 = (self.beta_2 * self.b0 + (1 - self.beta_2) * np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        if self.b0_dim == 2:
+            self.b0 = self.beta_2 * self.b0 + (1 - self.beta_2) * G**2
+        if self.bias_correction:
+            self.m0 /= (1 - self.beta_1**self.sample_num)
+            self.b0 /= (1 - self.beta_2**self.sample_num)
         self.stepvals.append(self.eta/(np.sqrt(self.b0)+self.delta))
         self.Q += self.eta / (np.sqrt(self.b0) + self.delta) * self.m0
         self.Q = la.qr(self.Q, mode='economic')[0]
 
 
 class RMSProp(StreamingPCA):
-    def __init__(self, *args, gamma=.9, eta=1e-3, b0=1e-5, unorm=2, **kwargs):
+    def __init__(self, *args, gamma=.9, eta=1e-3, b0=1e-5, unorm=2, b0_dim=1, **kwargs):
         super().__init__(*args, **kwargs)
-        self.gamma, self.eta, self.unorm = gamma, eta, unorm
-        self.b0 = np.ones(self.k) * b0
+        self.gamma, self.eta, self.unorm, self.b0_dim = gamma, eta, unorm, b0_dim
+
+        if self.b0_dim==0:
+            self.b0 = b0
+        elif self.b0_dim ==1:
+            self.b0 = np.ones(self.k) * b0
+        elif self.b0_dim == 2:
+            self.b0 = np.ones(self.d, self.k) * b0
+        else:
+            raise ValueError("b0_dim options are 0: constant, 1: vector, or 2: matrix")
         self.stepvals = []
 
 
@@ -648,7 +674,13 @@ class RMSProp(StreamingPCA):
         #Q0 = np.copy(self.Q)
 
         G = self.Xi.T @ (self.Xi @ self.Q) / self.B
-        self.b0 = self.gamma * self.b0 + (1 - self.gamma) * np.linalg.norm(G, ord=self.unorm, axis=0)**2
+        if self.b0_dim==0:
+            self.b0 = self.gamma * self.b0 + (1 - self.gamma) * np.linalg.norm(G, ord=self.unorm)**2
+        if self.b0_dim ==1:
+            self.b0 = self.gamma * self.b0 + (1 - self.gamma) * np.linalg.norm(G, ord=self.unorm, axis=0)**2
+        if self.b0_dim == 2:
+            self.b0 = self.gamma * self.b0 + (1 - self.gamma) * G**2
+
         self.Q += self.eta * G / np.sqrt(self.b0)
         self.Q = la.qr(self.Q, mode='economic')[0]
 
@@ -659,7 +691,12 @@ class RMSProp(StreamingPCA):
         #Q0 = np.copy(self.Q)
 
         G = self.Xi.T.dot(self.Xi.dot(self.Q)) / self.B
-        self.b0 = self.gamma * self.b0 + (1 - self.gamma) * np.linalg.norm(G, ord=self.unorm, axis=0)**2
+        if self.b0_dim==0:
+            self.b0 = self.gamma * self.b0 + (1 - self.gamma) * np.linalg.norm(G, ord=self.unorm)**2
+        if self.b0_dim ==1:
+            self.b0 = self.gamma * self.b0 + (1 - self.gamma) * np.linalg.norm(G, ord=self.unorm, axis=0)**2
+        if self.b0_dim == 2:
+            self.b0 = self.gamma * self.b0 + (1 - self.gamma) * G**2
         self.Q += self.eta * G / np.sqrt(self.b0)
         self.Q = la.qr(self.Q, mode='economic')[0]
 
