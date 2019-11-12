@@ -128,7 +128,7 @@ def get_bagXblocks(filename, B, Acc=True, block_total=1000):
 # Run the dataset simultaneously for multiple algorithms
 # Currently: Oja with learning rates c/t and c/sqrt(t), AdaOja, and HPCA
 
-def run_sim_bag(filename, k, methods=['AdaOja', 'HPCA', 'SPM'], b0=1e-5, p=None, B=10, m=1, Sparse=True, Acc=True, X=None, xnorm2=None, num_acc=100, Time=True):
+def run_sim_bag(filename, k, methods=['AdaOja', 'HPCA', 'SPM', 'RMSProp'], b0=1e-5, p=None, B=10, m=1, gamma=.9, eta=1e-3, Sparse=True, Acc=True, X=None, xnorm2=None, num_acc=100, Time=True):
     '''
     This runs several streaming PCA algorithms simultaneously on bag of words
     data
@@ -180,6 +180,10 @@ def run_sim_bag(filename, k, methods=['AdaOja', 'HPCA', 'SPM'], b0=1e-5, p=None,
         if 'SPM' in methods:
             spm = stsb.SPM(d, k, p=p, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
             spca_objects.append(spm)
+        if 'RMSProp' in methods:
+            rmsp = stsb.RMSProp(d, k, gamma=gamma, b0=b0, eta=eta, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+            spca_objects.append(rmsp)
+
         blocknum = 1
         row = []
         col = []

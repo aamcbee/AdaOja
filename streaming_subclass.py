@@ -596,17 +596,23 @@ class PM_mom(StreamingPCA):
 
 
 class ADAM(StreamingPCA):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, b0=1e-5, eta=1e-3, beta_1 = 0.1, beta_2 = 0.999, unorm=2,**kwargs):
         super().__init__(*args, **kwargs)
+        self.eta, self.beta_1, self.beta_2, self.unorm = eta, beta_1, beta_2, unorm
+        self.b0 = np.ones(self.k) * b0
+        self.m0 = np.zeros((self.d, self.k))
+        self.stepvals = []
 
     def dense_update(self):
         # Make a local variable for the current value of Q1
         #Q0 = np.copy(self.Q)
 
         G = self.Xi.T @ (self.Xi @ self.Q) / self.B
-        self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
-        self.stepvals.append(1/self.b0)
-        self.Q += G / self.b0
+        self.m0 = (self.beta_1 * self.m0 + (1 - self.beta_1) * G) / (1 - self.beta_1**self.sample_num)
+        self.b0 = (self.beta_2 * self.b0 + (1 - self.beta_2) * np.linalg.norm(G, ord=self.unorm, axis=0)**2) / (1 - self.beta_2**self.sample_num)
+
+        self.stepvals.append(self.eta/np.sqrt(self.b0))
+        self.Q += eta / (np.sqrt(self.b0)) * self.m0
         self.Q = la.qr(self.Q, mode='economic')[0]
 
     def sparse_update(self):
@@ -614,9 +620,10 @@ class ADAM(StreamingPCA):
         #Q0 = np.copy(self.Q)
 
         G = self.Xi.T.dot(self.Xi.dot(self.Q)) / self.B
-        self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
-        self.stepvals.append(1/self.b0)
-        self.Q += G / self.b0
+        self.m0 = (self.beta_1 * self.m0 + (1 - self.beta_1) * G) / (1 - self.beta_1**self.sample_num)
+        self.b0 = (self.beta_2 * self.b0 + (1 - self.beta_2) * np.linalg.norm(G, ord=self.unorm, axis=0)**2) / (1 - self.beta_2**self.sample_num)
+        self.stepvals.append(self.eta/np.sqrt(self.b0))
+        self.Q += eta / (np.sqrt(self.b0)) * self.m0
         self.Q = la.qr(self.Q, mode='economic')[0]
 
 
