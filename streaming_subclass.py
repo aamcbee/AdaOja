@@ -361,7 +361,7 @@ class AdaOja(StreamingPCA):
     '''
     Implements the AdaOja algorithm with a vector of learning rates.
     '''
-    def __init__(self, d, k, b0=1e-5, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False, unorm=2, single_acc_B_index=10):
+    def __init__(self, d, k, b0=1e-5, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False, unorm=2, single_acc_B_index=10, b0_dim=1):
         '''
         b0: optional float, default 1e-5. The initial "guess" for the learning
             rate parameter in adagrad.
@@ -376,8 +376,17 @@ class AdaOja(StreamingPCA):
         if single_acc_B_index < 0:
             raise ValueError('single_acc_B_index must be nonnegative')
 
-        self.unorm, self.single_acc_B_index = unorm, single_acc_B_index
-        self.b0 = np.ones(self.k) * b0
+
+        self.unorm, self.single_acc_B_index, self.b0_dim = unorm, single_acc_B_index, b0_dim
+        if self.b0_dim==0:
+            self.b0 = b0
+        elif self.b0_dim ==1:
+            self.b0 = np.ones(self.k) * b0
+        elif self.b0_dim == 2:
+            self.b0 = np.ones((self.d, self.kf)) * b0
+        else:
+            raise ValueError("b0_dim options are 0: constant, 1: vector, or 2: matrix")
+
         self.stepvals = [1 / self.b0]
 
     def add_block(self, Xi, final_sample=False):
@@ -391,7 +400,12 @@ class AdaOja(StreamingPCA):
         #Q0 = np.copy(self.Q)
 
         G = self.Xi.T @ (self.Xi @ self.Q) / self.B
-        self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        if self.b0_dim == 0:
+            self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm)**2)
+        if self.b0_dim == 1:
+            self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        if self.b0_dim == 2:
+            self.b0 = np.sqrt(self.b0**2 + G**2)
         self.stepvals.append(1/self.b0)
         self.Q += G / self.b0
         self.Q = la.qr(self.Q, mode='economic')[0]
@@ -401,7 +415,12 @@ class AdaOja(StreamingPCA):
         #Q0 = np.copy(self.Q)
 
         G = self.Xi.T.dot(self.Xi.dot(self.Q)) / self.B
-        self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        if self.b0_dim == 0:
+            self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm)**2)
+        if self.b0_dim == 1:
+            self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        if self.b0_dim == 2:
+            self.b0 = np.sqrt(self.b0**2 + G**2)
         self.stepvals.append(1/self.b0)
         self.Q += G / self.b0
         self.Q = la.qr(self.Q, mode='economic')[0]
@@ -596,7 +615,7 @@ class PM_mom(StreamingPCA):
 
 
 class ADAM(StreamingPCA):
-    def __init__(self, *args, eta=1e-3, beta_1 = 0.1, beta_2 = 0.999, delta=1e-8, unorm=2, bias_correction=False, b0_dim=1, **kwargs):
+    def __init__(self, *args, eta=1e-3, beta_1 = 0.9, beta_2 = 0.999, delta=1e-8, unorm=2, bias_correction=False, b0_dim=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.eta, self.beta_1, self.beta_2, self.delta, self.unorm, self.bias_correction, self.b0_dim = eta, beta_1, beta_2, delta, unorm, bias_correction, b0_dim
 
@@ -605,7 +624,7 @@ class ADAM(StreamingPCA):
         elif self.b0_dim ==1:
             self.b0 = np.zeros(self.k)
         elif self.b0_dim == 2:
-            self.b0 = np.zeros(self.d, self.k)
+            self.b0 = np.zeros((self.d, self.k))
         else:
             raise ValueError("b0_dim options are 0: constant, 1: vector, or 2: matrix")
 
@@ -663,7 +682,7 @@ class RMSProp(StreamingPCA):
         elif self.b0_dim ==1:
             self.b0 = np.ones(self.k) * b0
         elif self.b0_dim == 2:
-            self.b0 = np.ones(self.d, self.k) * b0
+            self.b0 = np.ones((self.d, self.k)) * b0
         else:
             raise ValueError("b0_dim options are 0: constant, 1: vector, or 2: matrix")
         self.stepvals = []
