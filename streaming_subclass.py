@@ -383,7 +383,7 @@ class AdaOja(StreamingPCA):
         elif self.b0_dim ==1:
             self.b0 = np.ones(self.k) * b0
         elif self.b0_dim == 2:
-            self.b0 = np.ones((self.d, self.kf)) * b0
+            self.b0 = np.ones((self.d, self.k)) * b0
         else:
             raise ValueError("b0_dim options are 0: constant, 1: vector, or 2: matrix")
 
