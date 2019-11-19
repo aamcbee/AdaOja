@@ -257,9 +257,7 @@ class compare_lr(object):
             self.adaoja = stsb.AdaOja(self.d, k, b0=b0, B=self.B, Sparse=Sparse, Acc=True, xnorm2=xnorm2, X=X, num_acc=1, Time=False, single_acc_B_index=self.test_index)
 
             blocknum = 1
-            row = []
-            col = []
-            data = []
+            row, col, data = [], [], []
             for i in range(nnz):
 
                 entry = list(map(int, f.readline().split()))
@@ -287,9 +285,7 @@ class compare_lr(object):
                     # Increase the block number
                     blocknum += 1
                     # Start the new block in the row, col, and data entries.
-                    row = [(entry[0] - 1) % self.B]
-                    col = [entry[1] - 1]
-                    data = [entry[2]]
+                    row, col, data = [(entry[0] - 1) % self.B], [entry[1] - 1], [entry[2]]
             # Insert final block
             if Sparse:
                 Xi = sp.csr_matrix((data, (row, col)), shape=(max(row) + 1, self.d))

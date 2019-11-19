@@ -82,9 +82,7 @@ def get_bagXblocks(filename, B, Acc=True, block_total=1000):
         density = nnz / (n*d)
 
         blocknum = 1
-        row=[]
-        col=[]
-        data=[]
+        row, col, data = [], [], []
         for i in range(nnz):
             entry = list(map(int, f.readline().split()))
             # if the row num (with zero based indexing)
@@ -109,9 +107,7 @@ def get_bagXblocks(filename, B, Acc=True, block_total=1000):
                         return n, d, nnz, density, Xblocks
 
                 # Start the new block in the row, col, and data entries.
-                row = [(entry[0] - 1) % B]
-                col = [entry[1] - 1]
-                data = [entry[2]]
+                row, col, data = [(entry[0] - 1) % B], [entry[1] - 1], [entry[2]]
 
         Xi = sp.csr_matrix((data, (row, col)), shape=(B,d))
         Xblocks.append(Xi)
@@ -188,9 +184,7 @@ def run_sim_bag(filename, k, methods=['AdaOja', 'HPCA', 'SPM'], b0=1e-5, p=None,
             spca_objects.append(adam)
 
         blocknum = 1
-        row = []
-        col = []
-        data = []
+        row, col, data = [], [], []
         for i in range(nnz):
 
             entry = list(map(int, f.readline().split()))
@@ -213,9 +207,7 @@ def run_sim_bag(filename, k, methods=['AdaOja', 'HPCA', 'SPM'], b0=1e-5, p=None,
                 # Increase the block number
                 blocknum += 1
                 # Start the new block in the row, col, and data entries.
-                row = [(entry[0] - 1) % B]
-                col = [entry[1] - 1]
-                data = [entry[2]]
+                row, col, data = [(entry[0] - 1) % B], [entry[1] - 1], [entry[2]]
         # Insert final block
         if Sparse:
             Xi = sp.csr_matrix((data, (row, col)), shape=(max(row) + 1,d))
@@ -267,7 +259,6 @@ def run_sim_fullX(X, k, methods=['AdaOja', 'HPCA', 'SPM'], b0=1e-5, gamma=.9, be
         if endBsize == 0 and i == (nblock - 1) * B:
             for spca in spca_objects:
                 spca.add_block(Xi, final_sample=True)
-
         else:
             for spca in spca_objects:
                 spca.add_block(Xi)
