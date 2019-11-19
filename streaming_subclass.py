@@ -361,14 +361,14 @@ class AdaOja(StreamingPCA):
     '''
     Implements the AdaOja algorithm with a vector of learning rates.
     '''
-    def __init__(self, d, k, b0=1e-5, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False, unorm=2, single_acc_B_index=10, b0_dim=1):
+    def __init__(self, *args, b0=1e-5, unorm=2, single_acc_B_index=10, b0_dim=1, **kwargs):
         '''
         b0: optional float, default 1e-5. The initial "guess" for the learning
             rate parameter in adagrad.
         unorm: optional parameter. Indicates the order of the norm used to
             compute the learning rate. Default 2.
         '''
-        StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+        super().__init__(*args, **kwargs)
         if not float(single_acc_B_index).is_integer():
             raise TypeError('single_acc_B_index must be an integer')
         if b0 < 0:
@@ -430,12 +430,12 @@ class HPCA(StreamingPCA):
     Implements the history PCA method from "Histoy PCA: a New Algorithm for
         Streaming PCA" by Yang, Hsieh and Wang.
     '''
-    def __init__(self, d, k, B=10, m=1, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
+    def __init__(self, *args, m=1, **kwargs):
         '''
         m: optional int > 0, default 1. The number of convergence iterations
             per block.
         '''
-        StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+        super().__init__(*args, **kwargs)
         self.m = m
         self.S1 = np.random.normal(size=(d,k))
         self.lam = np.zeros((k,1))
@@ -462,7 +462,7 @@ class SPM(StreamingPCA):
     Implements the block power method found in "Memory Limited, Streaming PCA"
         by Mitliagkas, Caramanis, and Jain
     '''
-    def __init__(self, d, k, p=None, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
+    def __init__(self, *args, p=None, **kwargs):
         if p is None:
             p = k
 
@@ -471,7 +471,7 @@ class SPM(StreamingPCA):
         # method can apparently obtain better convergence if a few extra vectors
         # are computed, then truncated to k.
         self.true_k, self.p = k, p
-        StreamingPCA.__init__(self, d, p, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+        super().__init__(*args, **kwargs)
 
     def xnorm2_init(self, xnorm2):
         '''
@@ -537,7 +537,7 @@ class PM_mom(StreamingPCA):
     Implements the Mini-batch Power Method with Momentum found in "Accelerated
         Stochastic Power Iteration" by De Sa, He, Mitliagkas, Re, and Xu.
     '''
-    def __init__(self, d, k, B=10, beta_update = 10, beta_scales = np.array([2/3, 0.99, 1, 1.01, 1.5]), Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
+    def __init__(self, *args, beta_update=10, beta_scales = np.array([2/3, 0.99, 1, 1.01, 1.5]), **kwargs):
         '''
         beta_update: optional int > 0, the number of block iterations before
             beta is updated.
@@ -546,7 +546,7 @@ class PM_mom(StreamingPCA):
             beta_scales if it is not already included. Default given by
             Algorithm 3, Best Heavy Ball, in the reference paper.
         '''
-        StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+        super().__init__(self, *args, **kwargs)
         self.beta_update = beta_update
 
         # Make sure beta_scales contains a 1.

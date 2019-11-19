@@ -47,7 +47,6 @@ def plot_hpca_ada(adaoja, hpca, spm, dataname, figname=None, true_evar=None):
         plt.savefig(figname)
     plt.show()
 
-
 def plot_mom_comp(adaoja, rmsp, adam, dataname, figname=None, true_evar=None):
     '''
     Plots and saves the explained variance for AdaOja vs RMSProp vs ADAM
@@ -85,7 +84,6 @@ def plot_mom_comp(adaoja, rmsp, adam, dataname, figname=None, true_evar=None):
     else:
         plt.savefig(figname)
     plt.show()
-
 
 class compare_gamma(object):
     # An object to compare AdaOja for different momentum parameters
