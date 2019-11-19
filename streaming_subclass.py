@@ -532,7 +532,6 @@ class SPM(StreamingPCA):
         S = 1 / self.B * self.Xi.T.dot(self.Xi.dot(self.Q))
         self.Q = la.qr(S, mode='economic')[0]
 
-
 class PM_mom(StreamingPCA):
     '''
     Implements the Mini-batch Power Method with Momentum found in "Accelerated
@@ -613,7 +612,6 @@ class PM_mom(StreamingPCA):
         # Set Q to be the result achieved by our current Q
         self.Q = self.Q_vals[self.one_index]
 
-
 class ADAM(StreamingPCA):
     def __init__(self, *args, eta=1e-3, beta_1 = 0.9, beta_2 = 0.999, delta=1e-8, unorm=2, bias_correction=False, b0_dim=1, **kwargs):
         super().__init__(*args, **kwargs)
@@ -671,7 +669,6 @@ class ADAM(StreamingPCA):
         self.Q += self.eta / (np.sqrt(self.b0) + self.delta) * self.m0
         self.Q = la.qr(self.Q, mode='economic')[0]
 
-
 class RMSProp(StreamingPCA):
     def __init__(self, *args, gamma=.9, eta=1e-3, b0=1e-5, unorm=2, b0_dim=1, **kwargs):
         super().__init__(*args, **kwargs)
@@ -720,3 +717,81 @@ class RMSProp(StreamingPCA):
         self.Q = la.qr(self.Q, mode='economic')[0]
 
         self.stepvals.append(self.eta / np.sqrt(self.b0))
+
+class AdaOja_mom(StreamingPCA):
+    '''
+    Implements the AdaOja algorithm with a momentum component
+    '''
+    def __init__(self, *args, b0=1e-5, unorm=2, single_acc_B_index=10, b0_dim=1, gamma=.9, **kwargs):
+        #def __init__(self, d, k, b0=1e-5, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False, unorm=2, single_acc_B_index=10, b0_dim=1, gamma=.9):
+        '''
+        b0: optional float, default 1e-5. The initial "guess" for the learning
+            rate parameter in adagrad.
+        unorm: optional parameter. Indicates the order of the norm used to
+            compute the learning rate. Default 2.
+        b0_dim: The dimension of b0 to use: b0 = 0 -> single value, b0 =1 -> vector valued, b0 = 2 -> matrix valued
+        gamma: optional float, default .9. The momentum parameter between 0 and 1
+        '''
+        super.__init__(*args, **kwargs)
+        if not float(single_acc_B_index).is_integer():
+            raise TypeError('single_acc_B_index must be an integer')
+        if b0 < 0:
+            raise ValueError('b0 must be nonnegative')
+        if single_acc_B_index < 0:
+            raise ValueError('single_acc_B_index must be nonnegative')
+        if gamma < 0 or gamma > 1:
+            raise ValueError('0 <= gamma <= 1')
+
+
+        self.unorm, self.single_acc_B_index, self.b0_dim, self.gamma = unorm, single_acc_B_index, b0_dim, gamma
+
+        if self.b0_dim==0:
+            self.b0 = b0
+        elif self.b0_dim ==1:
+            self.b0 = np.ones(self.k) * b0
+        elif self.b0_dim == 2:
+            self.b0 = np.ones((self.d, self.k)) * b0
+        else:
+            raise ValueError("b0_dim options are 0: constant, 1: vector, or 2: matrix")
+
+
+        self.stepvals = [1 / self.b0]
+        self.Q0 = np.zeros((self.d, self.k))
+
+    def add_block(self, Xi, final_sample=False):
+        StreamingPCA.add_block(self, Xi, final_sample=final_sample)
+        if self.Acc:
+            if self.block_num == self.single_acc_B_index and self.num_acc==1:
+                StreamingPCA.get_Acc(self, final_sample)
+
+    def dense_update(self):
+        # Make a local variable for the current value of Q1
+        #Q0 = np.copy(self.Q)
+
+        G = self.Xi.T @ (self.Xi @ self.Q) / self.B
+        if self.b0_dim == 0:
+            self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm)**2)
+        if self.b0_dim == 1:
+            self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        if self.b0_dim == 2:
+            self.b0 = np.sqrt(self.b0**2 + G**2)
+        self.stepvals.append(1/self.b0)
+        S = self.Q + G / self.b0 - self.gamma * self.Q0
+        self.Q0 = self.Q
+        self.Q = la.qr(S, mode='economic')[0]
+
+    def sparse_update(self):
+        # Make a local variable for the current value of Q1
+        #Q0 = np.copy(self.Q)
+
+        G = self.Xi.T.dot(self.Xi.dot(self.Q)) / self.B
+        if self.b0_dim == 0:
+            self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm)**2)
+        if self.b0_dim == 1:
+            self.b0 = np.sqrt(self.b0**2 + np.linalg.norm(G, ord=self.unorm, axis=0)**2)
+        if self.b0_dim == 2:
+            self.b0 = np.sqrt(self.b0**2 + G**2)
+        self.stepvals.append(1/self.b0)
+        S = self.Q + G / self.b0 - self.gamma * self.Q0
+        self.Q0 = self.Q
+        self.Q = la.qr(S, mode='economic')[0]
