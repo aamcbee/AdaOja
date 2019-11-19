@@ -732,7 +732,7 @@ class AdaOja_mom(StreamingPCA):
         b0_dim: The dimension of b0 to use: b0 = 0 -> single value, b0 =1 -> vector valued, b0 = 2 -> matrix valued
         gamma: optional float, default .9. The momentum parameter between 0 and 1
         '''
-        super.__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not float(single_acc_B_index).is_integer():
             raise TypeError('single_acc_B_index must be an integer')
         if b0 < 0:

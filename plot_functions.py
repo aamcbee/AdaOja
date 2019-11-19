@@ -86,6 +86,113 @@ def plot_mom_comp(adaoja, rmsp, adam, dataname, figname=None, true_evar=None):
         plt.savefig(figname)
     plt.show()
 
+
+class compare_gamma(object):
+    # An object to compare AdaOja for different momentum parameters
+    def __init__(self, gammas):
+        self.gammas = gammas
+        self.n_gam = len(gammas)
+
+    def run_bag(self, filename, k, B=10, b0=1e-5, m=1, Sparse=True, X=None, xnorm2=None, num_acc=100):
+        self.B = B
+        with open(filename, 'r') as f:
+            self.n = int(f.readline())
+            self.d = int(f.readline())
+            nnz = int(f.readline())
+
+            # Initialize a list of AdaOja objects
+            self.mom_list = [stsb.AdaOja_mom(self.d, k, b0=b0, B=self.B, Sparse=Sparse, Acc=True, xnorm2=xnorm2, X=X, num_acc=num_acc, Time=False, gamma=g) for g in self.gammas]
+            self.adaoja = stsb.AdaOja(self.d, k, b0=b0, B=self.B, Sparse=Sparse, Acc=True, xnorm2=xnorm2, X=X, num_acc=num_acc, Time=False)
+
+            blocknum = 1
+            row, col, data = [], [], []
+            for i in range(nnz):
+                entry = list(map(int, f.readline().split()))
+                # if the row num (with zero based indexing) is in the current block
+                if entry[0] - 1 < blocknum * self.B:
+                    # note bag of words uses 1 based indexing
+                    row.append((entry[0]-1) % self.B)
+                    col.append(entry[1]-1)
+                    data.append(entry[2])
+                else:
+                    # Add the current block to the model
+                    if Sparse:
+                        Xi = sp.csr_matrix((data, (row, col)), shape=(self.B, self.d))
+                    else:
+                        Xi = np.zeros((self.B, self.d))
+                        Xi[row, col] = data
+
+                    for adaoja_mom in self.mom_list:
+                        adaoja_mom.add_block(Xi)
+
+                    self.adaoja.add_block(Xi)
+                    # Increase the block number
+                    blocknum += 1
+                    # Start the new block in the row, col, and data entries.
+                    row = [(entry[0] - 1) % self.B]
+                    col = [entry[1] - 1]
+                    data = [entry[2]]
+            # Insert final block
+            if Sparse:
+                Xi = sp.csr_matrix((data, (row, col)), shape=(max(row) + 1, self.d))
+            else:
+                Xi = np.zeros((max(row) + 1, self.d))
+                Xi[row,col] = data
+            for adaoja_mom in self.mom_list:
+                adaoja_mom.add_block(Xi, final_sample=True)
+            self.adaoja.add_block(Xi, final_sample=True)
+
+    def run_fullX(self, X, k, B=10, b0=1e-5, m=1, Sparse=False, xnorm2=None, num_acc=100):
+        self.B = B
+        self.n, self.d = X.shape
+        self.mom_list = [stsb.AdaOja_mom(self.d, k, b0=b0, B=self.B, Sparse=Sparse, Acc=True, xnorm2=xnorm2, X=X, num_acc=num_acc, Time=False, gamma=g) for g in self.gammas]
+        self.adaoja = stsb.AdaOja(self.d, k, b0=b0, B=B, Sparse=Sparse, Acc=True, xnorm2=xnorm2, X=X, num_acc=num_acc, Time=False)
+
+        nblock = int(self.n / self.B)
+        endBsize = self.n - nblock * self.B
+        for i in range(0, nblock*self.B, self.B):
+            Xi = X[i:i+self.B]
+            if endBsize == 0 and i == (nblock - 1) * self.B:
+                for adaoja_mom in self.mom_list:
+                    adaoja_mom.add_block(Xi, final_sample=True)
+                self.adaoja.add_block(Xi, final_sample=True)
+
+            else:
+                for adaoja_mom in self.mom_list:
+                    adaoja_mom.add_block(Xi)
+                self.adaoja.add_block(Xi)
+
+        if endBsize > 0:
+            Xi = X[nblock * self.B:]
+            for adaoja_mom in self.mom_list:
+                adaoja_mom.add_block(Xi, final_sample=True)
+            self.adaoja.add_block(Xi, final_sample=True)
+
+    def run_blocklist(self, Xlist, k, b0=1e-5, m=1, Sparse=True, xnorm2=None, num_acc=100):
+
+        self.B, self.d = Xlist[0].shape
+        self.mom_list = [stsb.AdaOja_mom(self.d, k, b0=b0, B=self.B, Sparse=Sparse, Acc=True, xnorm2=xnorm2, X=Xlist, num_acc=num_acc, Time=False, gamma=g) for g in self.gammas]
+        self.adaoja = stsb.AdaOja(self.d, k, b0=b0, B=self.B, Sparse=Sparse, Acc=True, xnorm2=xnorm2, X=Xlist, num_acc=num_acc, Time=False)
+
+        nblocks = len(Xlist)
+        for i in range(nblocks-1):
+            for adaoja_mom in self.mom_list:
+                adaoja_mom.add_block(Xlist[i])
+            self.adaoja.add_block(Xlist[i])
+        for adaoja_mom in self.mom_list:
+            adaoja_mom.add_block(Xlist[-1], final_sample=True)
+        self.adaoja.add_block(Xlist[-1], final_sample=True)
+
+    def plot_acc(self, dataname=''):
+        for i in range(self.n_gam):
+            plt.plot(self.mom_list[i].acc_indices, self.mom_list[i].accQ, label=r'$\gamma=$' + str(self.gammas[i]))
+        plt.plot(self.adaoja.acc_indices, self.adaoja.accQ, label='No Momentum')
+        plt.legend(loc='best')
+        plt.title('AdaOja momentum comparison\n'+dataname)
+        plt.xlabel('Number of samples')
+        plt.ylabel('Explained Variance')
+        plt.show()
+
 class compare_lr(object):
     def __init__(self, base=2., lower=-10, upper=10, test_index=0):
         '''
@@ -427,7 +534,6 @@ class compare_lr(object):
         plt.title(title)
         plt.savefig(figname)
         plt.show()
-
 
 class compare_time(object):
     def __init__(self, data_method):
