@@ -19,7 +19,7 @@ def plot_hpca_ada(adaoja, hpca, spm, dataname, figname=None, true_evar=None):
         dataname: str, name for the data being applied
         figname: None or optional string, the name of the figure to be saved.
             if figname = None, default figname is 'hpcavada_' + dataname +
-            '_k' + str(k) + '.png'.
+            '_k' + str(k) + '.svg'.
         true_evar: None or optional positive float between 0 and 1. The
             explained variance for the top k true eigenvectors of the covariance
             matrix (typically the sample covariance matrix). This allows us to
@@ -42,7 +42,7 @@ def plot_hpca_ada(adaoja, hpca, spm, dataname, figname=None, true_evar=None):
     plt.xlabel('Number of samples')
     plt.ylabel('Explained Variance')
     if figname is None:
-        plt.savefig('Expvarcomp_' + dataname + '_k' + str(k) + '_B' + str(B) + '.png')
+        plt.savefig('Expvarcomp_' + dataname + '_k' + str(k) + '_B' + str(B) + '.svg')
     else:
         plt.savefig(figname)
     plt.show()
@@ -57,7 +57,7 @@ def plot_mom_comp(adaoja, rmsp, adam, dataname, figname=None, true_evar=None):
         dataname: str, name for the data being applied
         figname: None or optional string, the name of the figure to be saved.
             if figname = None, default figname is 'hpcavada_' + dataname +
-            '_k' + str(k) + '.png'.
+            '_k' + str(k) + '.svg'.
         true_evar: None or optional positive float between 0 and 1. The
             explained variance for the top k true eigenvectors of the covariance
             matrix (typically the sample covariance matrix). This allows us to
@@ -80,7 +80,7 @@ def plot_mom_comp(adaoja, rmsp, adam, dataname, figname=None, true_evar=None):
     plt.xlabel('Number of samples')
     plt.ylabel('Explained Variance')
     if figname is None:
-        plt.savefig('momcomp_' + dataname + '_k' + str(k) + '_B' + str(B) + '.png')
+        plt.savefig('momcomp_' + dataname + '_k' + str(k) + '_B' + str(B) + '.svg')
     else:
         plt.savefig(figname)
     plt.show()
@@ -453,7 +453,7 @@ class compare_lr(object):
         Inputs:
         --------------------------------
         dataname: str, the name of the dataset
-        figname: str, the name of the figure to save. Typically ends in .png
+        figname: str, the name of the figure to save. Typically ends in .svg
         true_evar: None or optional positive float between 0 and 1.
             The explained variance for the top k true eigenvectors of the
             covariance matrix (typically the sample covariance matrix). This
@@ -493,7 +493,7 @@ class compare_lr(object):
         Inputs:
         --------------------------------
         dataname: str, the name of the dataset
-        figname: str, the name of the figure to save. Typically ends in .png
+        figname: str, the name of the figure to save. Typically ends in .svg
         loglog: optional bool, default True. Indicates whether to plot loglog
         scale
         '''
@@ -574,7 +574,7 @@ class compare_time(object):
         plt.ylabel('Time (s)')
         plt.title('Average total update time over ' + str(self.avg) + 'runs \n' + dataname + ' data, k=' + str(self.k))
         if figname is None:
-            plt.savefig(dataname + str(self.avg) + 'time.png')
+            plt.savefig(dataname + str(self.avg) + 'time.svg')
         else:
             plt.savefig(figname)
         plt.show()

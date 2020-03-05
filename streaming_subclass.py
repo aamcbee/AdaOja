@@ -311,7 +311,7 @@ class Oja(StreamingPCA):
     '''
     Class for Oja's streaming PCA method with learning rate c/sqrt(t) or c/t.
     '''
-    def __init(self, *args, c=1., Sqrt=True, single_acc_B_index=10, **kwargs):
+    def __init__(self, *args, c=1., Sqrt=True, single_acc_B_index=10, **kwargs):
         '''
         Initialize the Oja's method object.
         c: optional float, the constant that determines the scale of the
@@ -322,7 +322,7 @@ class Oja(StreamingPCA):
 
         '''
         super().__init__(*args, **kwargs)
-        StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
+        #StreamingPCA.__init__(self, d, k, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
 
         if not float(single_acc_B_index).is_integer():
             raise TypeError('single_acc_B_index must be an integer')
@@ -437,8 +437,8 @@ class HPCA(StreamingPCA):
         '''
         super().__init__(*args, **kwargs)
         self.m = m
-        self.S1 = np.random.normal(size=(d,k))
-        self.lam = np.zeros((k,1))
+        self.S1 = np.random.normal(size=(self.d,self.k))
+        self.lam = np.zeros((self.k,1))
 
     def dense_update(self):
         # Make a local variable for the current value of Q1
@@ -462,7 +462,7 @@ class SPM(StreamingPCA):
     Implements the block power method found in "Memory Limited, Streaming PCA"
         by Mitliagkas, Caramanis, and Jain
     '''
-    def __init__(self, *args, p=None, **kwargs):
+    def __init__(self, d, k, p=None, B=10, Sparse=False, Acc=False, X=None, xnorm2=None, num_acc=100, Time=False):
         if p is None:
             p = k
 
@@ -471,7 +471,7 @@ class SPM(StreamingPCA):
         # method can apparently obtain better convergence if a few extra vectors
         # are computed, then truncated to k.
         self.true_k, self.p = k, p
-        super().__init__(*args, **kwargs)
+        StreamingPCA.__init__(self, d, p, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
 
     def xnorm2_init(self, xnorm2):
         '''
