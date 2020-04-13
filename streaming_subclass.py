@@ -388,6 +388,7 @@ class AdaOja(StreamingPCA):
             raise ValueError("b0_dim options are 0: constant, 1: vector, or 2: matrix")
 
         self.stepvals = [1 / self.b0]
+        self.cvals = [np.sqrt(self.sample_num) / self.b0]
 
     def add_block(self, Xi, final_sample=False):
         StreamingPCA.add_block(self, Xi, final_sample=final_sample)
@@ -407,6 +408,7 @@ class AdaOja(StreamingPCA):
         if self.b0_dim == 2:
             self.b0 = np.sqrt(self.b0**2 + G**2)
         self.stepvals.append(1/self.b0)
+        self.cvals.append(np.sqrt(self.sample_num)/self.b0)
         self.Q += G / self.b0
         self.Q = la.qr(self.Q, mode='economic')[0]
 
@@ -422,6 +424,7 @@ class AdaOja(StreamingPCA):
         if self.b0_dim == 2:
             self.b0 = np.sqrt(self.b0**2 + G**2)
         self.stepvals.append(1/self.b0)
+        self.cvals.append(np.sqrt(self.sample_num)/self.b0)
         self.Q += G / self.b0
         self.Q = la.qr(self.Q, mode='economic')[0]
 

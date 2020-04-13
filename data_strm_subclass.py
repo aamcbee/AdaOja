@@ -305,33 +305,3 @@ def run_sim_blocklist(Xlist, k, methods=['AdaOja', 'HPCA', 'SPM'], b0=1e-5, gamm
         spca.add_block(Xlist[-1], final_sample=True)
 
     return spca_objects
-
-def run_adaoja_fullX(X, k, b0=1e-5, B=10, Sparse=False, Acc=True, xnorm2=None, num_acc=100, Time=True, num_samples=None):
-    '''
-    This runs AdaOja on data that is provided in array X
-    '''
-    n, d = X.shape
-    if num_samples is not None:
-        num_acc = int(n / num_samples * num_acc)
-        nblock = int(num_samples / B)
-        endBsize = num_samples - nblock * B
-    else:
-        nblock = int(n / B)
-        endBsize = n - nblock * B
-
-    adaoja = stsb.AdaOja(d, k, b0=b0, B=B, Sparse=Sparse, Acc=Acc, X=X, xnorm2=xnorm2, num_acc=num_acc, Time=Time)
-
-    for i in range(0, nblock*B, B):
-        Xi = X[i:i+B]
-        if endBsize == 0 and i == (nblock - 1) * B:
-            adaoja.add_block(Xi, final_sample=True)
-        else:
-            adaoja.add_block(Xi)
-
-    if endBsize > 0:
-        if num_samples is not None:
-            Xi = X[nblock * B:num_samples]
-        else:
-            Xi = X[nblock * B:]
-        adaoja.add_block(Xi, final_sample=True)
-    return adaoja
