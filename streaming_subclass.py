@@ -448,7 +448,7 @@ class WindOja(StreamingPCA):
             raise ValueError('single_acc_B_index must be nonnegative')
 
 
-        self.unorm, self.single_acc_B_index, self.b0_dim = unorm, single_acc_B_index, b0_dim
+        self.unorm, self.single_acc_B_index, self.b0_dim, self.tol= unorm, single_acc_B_index, b0_dim, tol
         if self.b0_dim==0:
             self.b0 = b0
         elif self.b0_dim ==1:
@@ -463,6 +463,7 @@ class WindOja(StreamingPCA):
         # Boolean to determine whether the window has been hit
         self.window = False
 
+
     def add_block(self, Xi, final_sample=False):
         StreamingPCA.add_block(self, Xi, final_sample=final_sample)
         if self.window and final_sample:
@@ -475,7 +476,11 @@ class WindOja(StreamingPCA):
         # Make a local variable for the current value of Q1
         #Q0 = np.copy(self.Q)
         if self.window:
-            pass
+            eta = self.c / np.sqrt(self.sample_num)
+            self.Q += eta * (self.Xi.T @ (self.Xi @ self.Q)) / self.B
+            self.stepvals.append(eta)
+            self.cvals.append(self.c)
+
         else:
             G = self.Xi.T @ (self.Xi @ self.Q) / self.B
             if self.b0_dim == 0:
@@ -490,12 +495,14 @@ class WindOja(StreamingPCA):
             self.Q += G / self.b0
             self.Q = la.qr(self.Q, mode='economic')[0]
 
-
     def sparse_update(self):
         # Make a local variable for the current value of Q1
         #Q0 = np.copy(self.Q)
         if self.window:
-            pass
+            eta = self.c / np.sqrt(self.sample_num)
+            self.Q += eta * (self.Xi.T.dot(self.Xi.dot(self.Q))) / self.B
+            self.stepvals.append(eta)
+            self.cvals.append(self.c)
         else:
             G = self.Xi.T.dot(self.Xi.dot(self.Q)) / self.B
             if self.b0_dim == 0:
@@ -511,12 +518,18 @@ class WindOja(StreamingPCA):
             self.Q = la.qr(self.Q, mode='economic')[0]
 
     def eval_cval(self, size=3):
-        if np.mean(np.array(self.cvals[-size:-1]) - np.array(self.cvals[-size-1:-1]))) < self.tol:
-            self.window=True
-            self.c = np.mean(self.cvals[-size:-1])
-
-
-
+        if self.k == 1:
+            if self.block_num > size:
+                eval = np.mean(np.abs(np.array(self.cvals[-size:-1]) - np.array(self.cvals[-size-1:-2])))
+                if eval < self.tol:
+                    self.window=True
+                    self.c = np.mean(self.cvals[-size:-1])
+        else:
+            if self.block_num > size:
+                eval = np.max(np.mean(np.abs(np.array(self.cvals[-size:-1]) - np.array(self.cvals[-size-1:-2])), axis=0))
+                if eval < self.tol:
+                    self.window=True
+                    self.c = np.mean(self.cvals[-size:-1], axis=0)
 
 
 ################################################################################
