@@ -532,6 +532,9 @@ class WindOja(StreamingPCA):
                     self.c = np.mean(self.cvals[-size:-1], axis=0)
 
 
+
+
+
 ################################################################################
 class HPCA(StreamingPCA):
     '''
@@ -639,86 +642,6 @@ class SPM(StreamingPCA):
     def sparse_update(self):
         S = 1 / self.B * self.Xi.T.dot(self.Xi.dot(self.Q))
         self.Q = la.qr(S, mode='economic')[0]
-
-class PM_mom(StreamingPCA):
-    '''
-    Implements the Mini-batch Power Method with Momentum found in "Accelerated
-        Stochastic Power Iteration" by De Sa, He, Mitliagkas, Re, and Xu.
-    '''
-    def __init__(self, *args, beta_update=10, beta_scales = np.array([2/3, 0.99, 1, 1.01, 1.5]), **kwargs):
-        '''
-        beta_update: optional int > 0, the number of block iterations before
-            beta is updated.
-        beta_scales = optional 1D numpy array of scales to try for updating beta. Note
-            that the case where beta is kept constant--1--will be added to
-            beta_scales if it is not already included. Default given by
-            Algorithm 3, Best Heavy Ball, in the reference paper.
-        '''
-        super().__init__(self, *args, **kwargs)
-        self.beta_update = beta_update
-
-        # Make sure beta_scales contains a 1.
-        one_index = np.where(beta_scales==1)[0]
-        if one_index.size == 0:
-            self.beta_scales = np.hstack((1, beta_scales))
-            self.one_index = 0
-        else:
-            self.beta_scales = beta_scales
-            self.one_index = one_index[0]
-        self.num_beta = beta_scales.size
-
-        self.Q_vals = self.Q * np.ones((self.num_beta, self.d, self.k))
-        self.R_vals = np.eye(self.k) * np.ones((self.num_beta, self.k, self.k))
-        self.Q0_vals = np.zeros((self.num_beta, self.d, self.k))\
-
-        self.rayleigh = np.zeros(self.num_beta)
-
-    def add_block(self, Xi, final_sample=False):
-        self.Xi = Xi
-        # Initialize beta given the first block
-        if self.sample_num == 0:
-            self.beta = la.norm(self.Xi.dot(self.Q), ord='fro')**4 / 2
-            self.beta_vals = self.beta * self.beta_scales
-
-        StreamingPCA.add_block(self, Xi, final_sample=final_sample)
-
-        if final_sample or self.block_num % self.beta_update == 0:
-        # After self.beta_update iterations, update the beta value
-            self.choose_beta()
-
-    def choose_beta(self):
-        # Look at doing this with broadcasting
-        for i in range(self.num_beta):
-            self.rayleigh[i] = la.norm(self.Xi.dot(self.Q_vals[i]), ord='fro')**2
-        best_beta_index = np.argmax(self.rayleigh)
-        self.beta = self.beta_vals[best_beta_index]
-
-        # Update all values to the current best case values
-        self.Q_vals[:] = self.Q_vals[best_beta_index]
-        self.Q0_vals[:] = self.Q0_vals[best_beta_index]
-        self.R_vals[:] = self.R_vals[best_beta_index]
-        self.Q = self.Q_vals[best_beta_index]
-
-        # Set a new set of beta_vals based on the updated beta
-        self.beta_vals = self.beta * self.beta_scales
-
-
-    def dense_update(self):
-        # Look into doing this with broadcasting
-        for i in range(self.num_beta):
-            S = 1 / self.B * self.Xi.T @ (self.Xi @ self.Q_vals[i]) - self.beta_vals[i] * self.Q0_vals[i] @ la.inv(self.R_vals[i])
-            self.Q0_vals[i] = self.Q_vals[i]
-            self.Q_vals[i], self.R_vals[i] = la.qr(S, mode='economic')
-        # Set Q to be the result achieved by our current Q
-        self.Q = self.Q_vals[self.one_index]
-
-    def sparse_update(self):
-        for i in range(self.num_beta):
-            S = 1 / self.B * self.Xi.T.dot(self.Xi.dot(self.Q_vals[i])) - self.beta_vals[i] * self.Q0_vals[i].dot(la.inv(self.R_vals[i]))
-            self.Q0_vals[i] = self.Q_vals[i]
-            self.Q_vals[i], self.R_vals[i] = la.qr(S, mode='economic')
-        # Set Q to be the result achieved by our current Q
-        self.Q = self.Q_vals[self.one_index]
 
 class ADAM(StreamingPCA):
     def __init__(self, *args, eta=1e-3, beta_1 = 0.9, beta_2 = 0.999, delta=1e-8, unorm=2, bias_correction=False, b0_dim=1, **kwargs):
